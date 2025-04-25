@@ -1,10 +1,12 @@
 <template>
-  <div class="user-avatar">
-    <!-- тут будет аватарка пользователя, но пока под вопросом -->
-  </div>
+  <Avatar>
+    <AvatarImage src="https://github.com/unovue.png" alt="@unovue" />
+    <AvatarFallback>CN</AvatarFallback>
+  </Avatar>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 </script>
 
 <style scoped>
