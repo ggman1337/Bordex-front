@@ -6,6 +6,7 @@ import BoardPage from '@/views/BoardPage.vue';
 import BoardSettingsPage from '@/views/BoardSettingsPage.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import RegisterPage from '@/views/RegisterPage.vue';
+import SettingsPage from '@/views/SettingsPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', name: 'Home', component: MyBoardsPage },
@@ -15,6 +16,7 @@ const routes: Array<RouteRecordRaw> = [
   { path: '/tasks', name: 'Tasks', component: MyTasksPage },
   { path: '/login', name: 'Login', component: LoginPage },
   { path: '/register', name: 'Register', component: RegisterPage },
+  { path: '/settings', name: 'Settings', component: SettingsPage },
 ];
 
 const router = createRouter({
