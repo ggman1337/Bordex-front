@@ -1,152 +1,107 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import SockJS from 'sockjs-client'
-import webstomp from 'webstomp-client'
-
-// Интерфейс для сообщения чата
-interface ChatMessage {
-  id?: string
-  chatId?: string
-  senderId: number
-  recipientId: number
-  senderName: string
-  recipientName: string
-  content: string
-  timestamp: string
-}
-
-const stompClient = ref<any>(null)
-const connected = ref(false)
-const messages = ref<ChatMessage[]>([])
-const messageText = ref('')
-
-const currentUser = { id: 1, name: 'User' }
-const activeContact = { id: 2, name: 'Contact' }
-
-const yourAccessToken = 'ВАШ_JWT_ТОКЕН'
-
-const connect = () => {
-  const socket = new SockJS('http://localhost:8080/ws')
-  // создаем stomp клиент через webstomp.over, опционально можно передать настройки (например, debug)
-  stompClient.value = webstomp.over(socket, { debug: false })
-  // подключаемся; заголовки можно передавать, например, для аутентификации
-  stompClient.value.connect(
-      { Authorization: `Bearer ${yourAccessToken}` },
-      onConnected,
-      onError
-  )
-}
-
-const onConnected = () => {
-  connected.value = true
-  // подписка на приватную очередь текущего пользователя
-  stompClient.value.subscribe(
-      `/user/${currentUser.id}/queue/messages`,
-      (message: any) => {
-        if (message.body) {
-          const chatMessage: ChatMessage = JSON.parse(message.body)
-          messages.value.push(chatMessage)
-        }
-      }
-  )
-}
-
-const onError = (error: any) => {
-  console.error('STOMP error', error)
-}
-
-const send = () => {
-  if (messageText.value.trim() !== '' && stompClient.value) {
-    const message: ChatMessage = {
-      senderId: currentUser.id,
-      recipientId: activeContact.id,
-      senderName: currentUser.name,
-      recipientName: activeContact.name,
-      content: messageText.value,
-      timestamp: new Date().toISOString()
-    }
-    stompClient.value.send(
-        '/app/chat',
-        JSON.stringify(message),
-        {} // дополнительные заголовки, если нужны
-    )
-    messageText.value = ''
-  }
-}
-</script>
-
 <template>
-  <div class="chat-container">
-    <button @click="connect" class="connect-button">Подключиться</button>
+  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+    <div v-if="!connected" class="bg-white p-8 rounded-lg shadow-md w-80">
+      <h2 class="text-2xl font-bold mb-6 text-center">Connect to Board</h2>
+      <button @click="connect" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        Connect
+      </button>
+    </div>
 
-    <div v-if="connected" class="chat-box">
-      <div class="messages">
-        <div v-for="(msg, index) in messages" :key="index" class="message">
-          <strong>{{ msg.senderName }}:</strong> {{ msg.content }}
-        </div>
-      </div>
+    <div v-else class="flex w-full max-w-4xl h-[600px] bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="w-full p-4 flex flex-col">
+        <h2 class="text-xl font-bold mb-4">Tasks</h2>
+        <ul class="flex-1 overflow-y-auto space-y-2">
+          <li v-for="task in tasks" :key="task.id" class="cursor-pointer hover:bg-blue-600 p-2 rounded bg-blue-500 text-white">
+            <span>{{ task.name }}</span>
+          </li>
+        </ul>
 
-      <div class="input-area">
-        <input
-            v-model="messageText"
-            type="text"
-            placeholder="Введите сообщение"
-            class="message-input"
-            @keyup.enter="send"
-        />
-        <button @click="send" class="send-button">Отправить</button>
+        <form @submit.prevent="createTask" class="flex gap-2 mt-4">
+          <input v-model="taskName" type="text" placeholder="New Task Name" class="flex-1 border rounded px-3 py-2"/>
+          <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+            Create Task
+          </button>
+        </form>
+
+        <button @click="logout" class="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+          Disconnect
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.chat-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
+<script setup>
+import { onBeforeUnmount, ref } from 'vue'
+import SockJS from 'sockjs-client'
+import Stomp from 'webstomp-client'
+
+const connected = ref(false)
+const tasks = ref([])
+const taskName = ref('')
+let stompClient = null
+const baseUrl = 'http://localhost:8080'
+
+const connect = () => {
+  connected.value = true
+  const socket = new SockJS(`${baseUrl}/ws`)
+  stompClient = Stomp.over(socket)
+  stompClient.connect({}, onConnected, onError)
 }
 
-.connect-button,
-.send-button {
-  background-color: #4caf50;
-  color: white;
-  padding: 10px 20px;
-  margin-bottom: 10px;
-  border: none;
-  cursor: pointer;
-  border-radius: 8px;
+const onConnected = () => {
+  // Подписываемся на обновления для конкретной доски
+  stompClient.subscribe('/topic/board/1', onTaskUpdate);
+  stompClient.send('/app/board.join', {}, JSON.stringify({
+    boardId: 1,
+    userId: 1
+  }));
+  fetchTasks();
 }
 
-.chat-box {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 20px;
+
+const onTaskUpdate = (payload) => {
+  const updatedTask = JSON.parse(payload.body)
+  const index = tasks.value.findIndex(t => t.id === updatedTask.id)
+  if (index !== -1) {
+    tasks.value[index] = updatedTask
+  } else {
+    tasks.value.push(updatedTask)
+  }
 }
 
-.messages {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 10px;
+const fetchTasks = async () => {
+  const response = await fetch(`${baseUrl}/api/boards/1/tasks`)
+  tasks.value = await response.json()
 }
 
-.message {
-  padding: 5px 10px;
-  background-color: #f1f1f1;
-  margin-bottom: 5px;
-  border-radius: 4px;
+const createTask = async () => {
+  if (taskName.value.trim()) {
+    await fetch(`${baseUrl}/api/tasks/1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: taskName.value,
+        status: 'NEW',
+        priority: 'LOW'
+      })
+    })
+
+  }
 }
 
-.input-area {
-  display: flex;
-  gap: 10px;
+const onError = () => {
+  alert('Could not connect to WebSocket server. Please refresh this page to try again!')
 }
 
-.message-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+const logout = () => {
+  stompClient.send('/app/board.leave', {}, JSON.stringify({ boardId: 1, userId: 1 }))
+  connected.value = false
 }
-</style>
+
+onBeforeUnmount(() => {
+  if (stompClient) {
+    stompClient.disconnect()
+  }
+})
+</script>
