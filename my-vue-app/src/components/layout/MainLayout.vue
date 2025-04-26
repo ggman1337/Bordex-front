@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { SidebarProvider } from "@/components/ui/sidebar";
+import {SidebarProvider} from "@/components/ui/sidebar";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
 import UserAvatar from "@/components/layout/UserAvatar.vue";
 </script>
 
 <template>
-  <UserAvatar />
+  <UserAvatar/>
   <SidebarProvider>
-    <AppSidebar />
+    <AppSidebar/>
     <main>
-      <slot />
+      <slot/>
     </main>
   </SidebarProvider>
 </template>
