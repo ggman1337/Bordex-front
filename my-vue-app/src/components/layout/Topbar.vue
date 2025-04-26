@@ -1,7 +1,7 @@
 <template>
-  <div class="topbar">
+  <div class="topbar flex items-center justify-between w-full">
     <SearchBar />
-    <div class="actions">
+    <div class="actions flex items-center gap-3 ml-auto">
       <NotificationBell />
       <UserAvatar />
     </div>
@@ -15,6 +15,14 @@ import UserAvatar from '@/components/layout/UserAvatar.vue'
 </script>
 
 <style scoped>
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; height: 60px; }
-.actions { display: flex; align-items: center; gap: 12px; }
+.topbar {
+  padding-left: 24px;
+  padding-right: 0;
+  height: 60px;
+  min-width: 0;
+  background: #f4f7fa;
+}
+.actions {
+  gap: 16px;
+}
 </style>

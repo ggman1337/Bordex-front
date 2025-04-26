@@ -9,10 +9,19 @@ export interface Task {
   description: string;
   tag: { label: string; color: string };
   avatars: Avatar[];
+  assignees?: number[];
 }
 
 export interface BoardColumn {
   id: number;
   title: string;
   tasks: Task[];
+}
+
+export interface Board {
+  id: number;
+  title: string;
+  members: number;
+  tasks: number;
+  avatars: Avatar[];
 }

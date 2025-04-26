@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-xl p-4 shadow flex flex-col gap-2">
+  <div class="bg-white rounded-xl p-4 shadow flex flex-col gap-2" :class="{ 'border-l-4 border-blue-500': isAssigned }">
     <div class="flex items-center justify-between mb-1">
       <span class="text-xs font-semibold px-2 py-1 rounded-full" :class="task.tag.color">{{ task.tag.label }}</span>
       <button class="text-gray-400 hover:text-gray-600 text-xl"><span>...</span></button>
@@ -21,8 +21,15 @@
 
 <script setup lang="ts">
 import type { Task } from '../boards/types.ts'
+import { useUserStore } from '@/stores/userStore'
+import { computed } from 'vue'
 
-defineProps<{ task: Task }>()
+const props = defineProps<{ task: Task }>()
+const userStore = useUserStore()
+
+const isAssigned = computed(() => 
+  props.task.assignees?.includes(userStore.id)
+)
 </script>
 
 <style scoped>
