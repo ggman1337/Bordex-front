@@ -57,8 +57,8 @@ const userStore = useUserStore()
 const filteredBoards = computed(() =>
   boards.value.filter(board =>
     board.avatars.some(a =>
-      (a.initials && a.initials === userStore.avatar.initials) ||
-      (a.img && a.img === userStore.avatar.img)
+      (a.initials && a.initials === userStore.getUserById(1)?.avatar.initials) ||
+      (a.img && a.img === userStore.getUserById(1)?.avatar.img)
     )
   )
 )

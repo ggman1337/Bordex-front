@@ -1,17 +1,17 @@
 <template>
   <Avatar class="user-avatar">
-    <AvatarImage v-if="avatar.img" :src="avatar.img" :alt="store.name" />
-    <AvatarFallback v-else>{{ avatar.initials }}</AvatarFallback>
+    <AvatarImage v-if="avatar?.img" :src="avatar.img" :alt="store.getUserById(1)?.name" />
+    <AvatarFallback v-else>{{ avatar?.initials }}</AvatarFallback>
   </Avatar>
 </template>
 
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useUserStore } from '@/stores/userStore'
+import { useUserStore } from '@/stores/userStore.ts'
 import { computed } from 'vue'
 
 const store = useUserStore()
-const avatar = computed(() => store.avatar)
+const avatar = computed(() => store.getUserById(1)?.avatar)
 </script>
 
 <style scoped>
