@@ -15,6 +15,6 @@ const avatar = computed(() => store.getUserById(1)?.avatar)
 </script>
 
 <style scoped>
-.user-avatar { cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: #ccc; }
+.user-avatar { cursor: pointer; width: 32px; height: 32px; border-radius: 50%; background: #ccc; margin-right: 1rem}
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 </style>
