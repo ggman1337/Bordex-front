@@ -8,7 +8,7 @@
       </div>
     </div>
     <div class="flex items-center justify-between mt-auto">
-      <button class="text-blue-600 hover:underline text-sm">Открыть доску</button>
+      <button @click="openBoard" class="text-blue-600 hover:underline text-sm">Открыть доску</button>
       <div class="flex -space-x-2">
         <template v-for="(avatar, idx) in board.avatars" :key="idx">
           <img
@@ -29,10 +29,19 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { useBoardStore } from '@/stores/boardStore'
 interface Avatar { img?: string; initials?: string }
 interface Board { id: number; title: string; members: number; tasks: number; avatars: Avatar[] }
 const props = defineProps<{ board: Board }>()
 const { board } = props
+const router = useRouter()
+const boardStore = useBoardStore()
+function openBoard() {
+  // Сохраняем последнюю открытую доску
+  boardStore.setCurrentBoard(board.id)
+  router.push({ name: 'Board', params: { id: board.id } })
+}
 </script>
 
 <style scoped>

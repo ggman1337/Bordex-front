@@ -98,10 +98,10 @@ const selectedBoardId = ref(null)
 const editedTaskId = ref(null)
 const editedTaskName = ref('')
 const editedTaskStatus = ref('NEW')
-const editedTaskPriority = ref('LOW')
+const editedTaskPriority = ref('MEDIUM')
 
 let stompClient = null
-const baseUrl = 'http://localhost:8080'
+const baseUrl = "http://localhost:8080"
 
 const loadBoards = async () => {
   const response = await fetch(`${baseUrl}/api/boards?page=0&size=1000`)
@@ -179,7 +179,7 @@ const createOrUpdateTask = async () => {
       body: JSON.stringify({
         name: taskName.value,
         status: 'NEW',
-        priority: 'LOW'
+        priority: 'MEDIUM'
       })
     })
   }
@@ -198,7 +198,7 @@ const cancelEditing = () => {
   editedTaskId.value = null
   editedTaskName.value = ''
   editedTaskStatus.value = 'NEW'
-  editedTaskPriority.value = 'LOW'
+  editedTaskPriority.value = 'MEDIUM'
 }
 
 const saveEditedTask = async (task) => {
@@ -214,7 +214,7 @@ const saveEditedTask = async (task) => {
   editedTaskId.value = null
   editedTaskName.value = ''
   editedTaskStatus.value = 'NEW'
-  editedTaskPriority.value = 'LOW'
+  editedTaskPriority.value = 'MEDIUM'
 }
 
 const disconnect = () => {

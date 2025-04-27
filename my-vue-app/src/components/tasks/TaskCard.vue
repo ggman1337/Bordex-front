@@ -1,8 +1,8 @@
 <template>
   <div class="bg-white rounded-xl p-4 shadow flex flex-col gap-2" :class="{ 'border-l-4 border-blue-500': isAssigned }">
     <div class="flex items-center justify-between mb-1">
-      <span class="text-xs font-semibold px-2 py-1 rounded-full" :class="task.tag.color">{{ task.tag.label }}</span>
-      <button class="text-gray-400 hover:text-gray-600 text-xl"><span>...</span></button>
+      <span class="text-xs font-semibold px-2 py-1 rounded-full" :class="task.tag?.color ?? ''">{{ task.tag?.label ?? '' }}</span>
+      <button class="text-gray-400 hover:text-gray-600 text-xl" @click="emit('updateTask', task)"><span>...</span></button>
     </div>
     <div>
       <div class="font-semibold text-base mb-1">{{ task.title }}</div>
@@ -24,15 +24,20 @@ import type { Task, Avatar } from '../boards/types.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 import { computed } from 'vue'
 
-const props = defineProps<{ task: Task }>()
+// событие редактирования задачи
+const emit = defineEmits<{
+  (e: 'updateTask', task: Task): void;
+}>()
+
+const { task } = defineProps<{ task: Task }>()
 const userStore = useUserStore()
 
-const isAssigned = computed(() => 
-  props.task.assignees?.includes(userStore.id)
+const isAssigned = computed(() => 
+  task.assignees?.includes(userStore.id)
 )
 
-const avatarsToShow = computed(() => 
-  props.task.assignees
+const avatarsToShow = computed(() => 
+  task.assignees
     ?.map(id => userStore.getUserById(id)?.avatar)
     .filter((a): a is Avatar => !!a) || []
 )

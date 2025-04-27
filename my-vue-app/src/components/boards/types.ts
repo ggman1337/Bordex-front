@@ -10,6 +10,7 @@ export interface Task {
   tag: { label: string; color: string };
   avatars: Avatar[];
   assignees?: number[];
+  priority?: string;
 }
 
 export interface BoardColumn {

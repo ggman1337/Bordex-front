@@ -12,33 +12,31 @@ import {
   SidebarHeader,
   SidebarTrigger
 } from "@/components/ui/sidebar"
-// Menu items.
-const items = [
-  {
-    title: "Мои доски",
-    url: "/boards",
-    icon: Home,
-    iconSize: 24,
-  },
-  {
-    title: "Текущая доска",
-    url: "/boards/1",
-    icon: Inbox,
-    iconSize: 24,
-  },
-  {
-    title: "Мои задачи",
-    url: "/tasks",
-    icon: Calendar,
-    iconSize: 24,
-  },
-  {
-    title: "Настройки",
-    url: "/settings",
-    icon: Settings,
-    iconSize: 24,
-  },
-];
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useBoardStore } from '@/stores/boardStore'
+
+// Динамические пункты меню с текущим id доски
+const route = useRoute()
+const boardStore = useBoardStore()
+const boardId = computed(() => Number(route.params.id) || boardStore.currentBoardId)
+
+// Показать пункт 'Текущая доска' только если есть boardId
+const showCurrentBoard = computed(() => !!boardId.value)
+// Составляем меню в зависимости от наличия boardId
+const items = computed(() => {
+  const menu = [
+    { title: "Мои доски", url: "/boards", icon: Home, iconSize: 24 },
+  ]
+  if (showCurrentBoard.value) {
+    menu.push({ title: "Текущая доска", url: `/boards/${boardId.value}`, icon: Inbox, iconSize: 24 })
+  }
+  menu.push(
+    { title: "Мои задачи", url: "/tasks", icon: Calendar, iconSize: 24 },
+    { title: "Настройки", url: "/settings", icon: Settings, iconSize: 24 }
+  )
+  return menu
+})
 </script>
 
 <template>
