@@ -19,10 +19,12 @@
             <CardTitle>Создать доску</CardTitle>
           </CardHeader>
           <CardContent>
+            <label for="newBoardName" class="block mb-2 text-sm font-semibold dark:text-dark-200">Название доски</label>
             <input
               v-model="newBoardName"
-              placeholder="Название доски"
-              class="w-full p-2 border border-input rounded bg-input text-foreground placeholder:text-muted-foreground focus:outline-none dark:border-white" />
+              placeholder=" "
+              class="w-full p-2 border border-input rounded bg-input text-foreground placeholder:text-muted-foreground focus:outline-none dark:border-white"
+              id="newBoardName" />
           </CardContent>
           <CardFooter class="flex justify-end gap-2">
             <CardAction>

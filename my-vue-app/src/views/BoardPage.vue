@@ -8,7 +8,10 @@
           :key="col.id"
           :column="col"
           @createTask="openNewTaskForm"
-          @updateTask="openEditTaskForm"
+          @updateTask="onTaskUpdate"
+          @deleteTask="deleteTask"
+          @assignTask="assignCurrentUser"
+          @assignToUser="assignToUser"
         />
       </div>
       <teleport to="body" v-if="showTaskModal">
@@ -20,18 +23,56 @@
             </CardHeader>
             <CardContent>
               <div class="flex flex-col gap-4">
-                <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
-                <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"></textarea>
-                <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
-                  <option value="NEW">Нужно сделать</option>
-                  <option value="IN_PROGRESS">В процессе</option>
-                  <option value="DONE">Готово</option>
-                </select>
-                <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
-                  <option value="LOW">Низкий</option>
-                  <option value="MEDIUM">Средний</option>
-                  <option value="HIGH">Высокий</option>
-                </select>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Название</span>
+                  <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Описание</span>
+                  <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"></textarea>
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Тег</span>
+                  <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                    <option v-for="t in tagValues" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Статус</span>
+                  <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                    <option value="NEW">Нужно сделать</option>
+                    <option value="IN_PROGRESS">В процессе</option>
+                    <option value="DONE">Готово</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Приоритет</span>
+                  <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                    <option value="LOW">Не важно</option>
+                    <option value="MEDIUM">Нормально</option>
+                    <option value="HIGH">Важно</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Дедлайн</span>
+                  <Popover>
+                    <PopoverTrigger as-child>
+                      <Button
+                        variant="outline"
+                        :class="cn(
+                          'w-full justify-start text-left font-normal',
+                          !modalDeadline && 'text-muted-foreground',
+                        )"
+                      >
+                        <CalendarIcon class="mr-2 h-4 w-4" />
+                        {{ modalDeadline ? df.format(modalDeadline.toDate(getLocalTimeZone())) : "Выберите дату" }}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-auto p-0">
+                      <Calendar v-model="modalDeadline" initial-focus />
+                    </PopoverContent>
+                  </Popover>
+                </label>
               </div>
             </CardContent>
             <CardFooter class="flex justify-end gap-2">
@@ -54,16 +95,30 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 import CardAction from '@/components/ui/card/CardAction.vue'
-import type { Task as BoardTask, BoardColumn as ColumnType } from '@/components/boards/types.ts'
+import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
+import { tagValues } from '@/components/boards/types.ts'
 import { useRoute } from 'vue-router'
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useBoardStore } from '@/stores/boardStore'
 import { useTaskStore } from '@/stores/taskStore'
+import { useUserStore, type User } from '@/stores/userStore'
+import { cn } from '@/utils'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  DateFormatter,
+  getLocalTimeZone,
+  parseDate,
+  type DateValue,
+} from '@internationalized/date'
+import { CalendarIcon } from 'lucide-vue-next'
 
 const route = useRoute()
 const boardId = Number(route.params.id)
 const boardStore = useBoardStore()
 const taskStore = useTaskStore()
+const userStore = useUserStore()
 const board = computed(() => boardStore.boardById(boardId))
 const columns = computed(() => taskStore.columns)
 
@@ -77,6 +132,9 @@ const modalTitle = ref('')
 const modalDescription = ref('')
 const modalStatus = ref<'NEW' | 'IN_PROGRESS' | 'DONE'>('NEW')
 const modalPriority = ref<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
+const modalTag = ref<TagValue>(tagValues[0])
+const modalDeadline = ref<DateValue | undefined>(undefined)
+const df = new DateFormatter('ru-RU', { dateStyle: 'long' })
 
 // Открыть форму создания
 function openNewTaskForm(columnId: number) {
@@ -84,19 +142,35 @@ function openNewTaskForm(columnId: number) {
   selectedColumnId.value = columnId
   modalTitle.value = ''
   modalDescription.value = ''
+  modalTag.value = tagValues[0]
   modalStatus.value = columnId === 1 ? 'NEW' : columnId === 2 ? 'IN_PROGRESS' : 'DONE'
   modalPriority.value = 'LOW'
+  modalDeadline.value = undefined
   showTaskModal.value = true
+}
+
+// Drag&Drop: обработка смены статуса задачи
+async function onTaskUpdate(payload: BoardTask | { id: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }) {
+  // Если это просто BoardTask, открыть редактор
+  if ('name' in payload) {
+    openEditTaskForm(payload as BoardTask)
+    return
+  }
+  // Если это drop: {id, status}
+  await taskStore.updateTask(payload.id, { status: payload.status })
+  await taskStore.fetchTasks(boardId)
 }
 
 // Открыть форму редактирования
 function openEditTaskForm(task: BoardTask) {
   editTask.value = task
   selectedColumnId.value = null
-  modalTitle.value = task.title
-  modalDescription.value = task.description
-  modalStatus.value = task.tag.label as any
+  modalTitle.value = task.name
+  modalDescription.value = task.description ?? ''
+  modalStatus.value = task.status
   modalPriority.value = task.priority as any
+  modalTag.value = task.tag.value
+  modalDeadline.value = task.deadline ? parseDate(task.deadline.slice(0, 10)) : undefined
   showTaskModal.value = true
 }
 
@@ -105,28 +179,59 @@ function closeTaskModal() {
 }
 
 async function submitTaskModal() {
+  if (!modalTitle.value) return
+  const deadline = modalDeadline.value ? modalDeadline.value.toString() + 'T00:00:00' : undefined
   if (editTask.value) {
-    // редактирование
     await taskStore.updateTask(editTask.value.id, {
       name: modalTitle.value,
       description: modalDescription.value,
       status: modalStatus.value,
-      priority: modalPriority.value
+      priority: modalPriority.value,
+      tag: modalTag.value,
+      deadline,
     })
-  } else if (selectedColumnId.value) {
-    // создание
+  } else {
     await taskStore.createTask(boardId, {
       name: modalTitle.value,
       description: modalDescription.value,
       status: modalStatus.value,
-      priority: modalPriority.value
+      priority: modalPriority.value,
+      tag: modalTag.value,
+      deadline,
     })
   }
-  closeTaskModal()
+  showTaskModal.value = false
+  await taskStore.fetchTasks(boardId)
 }
 
-onMounted(() => taskStore.connect(boardId))
+// удаление задачи
+async function deleteTask(task: BoardTask) {
+  await taskStore.deleteTask(boardId, task.id)
+}
+
+// assign current user to task and refresh task list
+async function assignCurrentUser(task: BoardTask) {
+  await taskStore.assignUser(task.id, userStore.id)
+  await taskStore.fetchTasks(boardId)
+}
+
+// assign specified user and refresh tasks
+async function assignToUser(task: BoardTask, user: User) {
+  await taskStore.assignUser(task.id, user.id)
+  await taskStore.fetchTasks(boardId)
+}
+
+onMounted(() => {
+  // load current user for assignment highlighting
+  userStore.fetchCurrentUser()
+  // load all users for assignment from board
+  userStore.fetchUsersFromBoard(boardId)
+  // load tasks
+  taskStore.fetchTasks(boardId)
+  taskStore.connect(boardId)
+})
 onBeforeUnmount(() => taskStore.disconnect())
+
 </script>
 
 <style scoped>

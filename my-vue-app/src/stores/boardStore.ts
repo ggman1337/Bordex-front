@@ -39,12 +39,11 @@ export const useBoardStore = defineStore('board', {
         this.boards = data.content.map((b: any) => ({
           id: b.id,
           title: b.name,
-          members: b.boardUsers?.length ?? 0,
-          tasks: b.tasks?.length ?? 0,
-          avatars: (b.boardUsers ?? []).map((u: any) => ({
-            img: u.avatar?.img,
-            initials: u.avatar?.initials,
-          })),
+          description: b.description,
+          scope: b.scope,
+          owner: b.owner,
+          membersCount: b.membersCount ?? 0,
+          tasksCount: b.tasksCount ?? 0,
         }))
       } catch (e: any) {
         this.error = e.message
@@ -63,12 +62,11 @@ export const useBoardStore = defineStore('board', {
         const newBoard = {
           id: board.id,
           title: board.name,
-          members: board.boardUsers?.length ?? 0,
-          tasks: board.tasks?.length ?? 0,
-          avatars: (board.boardUsers ?? []).map((u: any) => ({
-            img: u.avatar?.img,
-            initials: u.avatar?.initials,
-          })),
+          description: board.description,
+          scope: board.scope,
+          owner: board.owner,
+          membersCount: board.membersCount ?? 0,
+          tasksCount: board.tasksCount ?? 0,
         }
         this.boards.push(newBoard)
       } catch (e: any) {
