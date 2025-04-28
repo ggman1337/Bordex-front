@@ -1,5 +1,5 @@
 <template>
-  <div class="topbar flex items-center justify-between w-full">
+  <div class="topbar flex items-center justify-between w-full bg-background text-foreground">
     <SearchBar />
     <div class="actions flex items-center gap-3 ml-auto">
       <NotificationBell />
@@ -20,7 +20,6 @@ import UserAvatar from '@/components/layout/UserAvatar.vue'
   padding-right: 0;
   height: 60px;
   min-width: 0;
-  background: #f4f7fa;
 }
 .actions {
   gap: 16px;

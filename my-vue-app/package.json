@@ -26,6 +26,8 @@
     "webstomp-client": "^1.2.6"
   },
   "devDependencies": {
+    "@iconify-json/radix-icons": "^1.2.2",
+    "@iconify/vue": "^4.3.0",
     "@types/node": "^22.14.1",
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-vue": "^5.2.2",

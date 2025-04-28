@@ -6,25 +6,24 @@ import Topbar from "@/components/layout/Topbar.vue";
 
 <template>
   <SidebarProvider>
-      <AppSidebar />
-      <div class="flex flex-col flex-1 overflow-hidden">
-        <Topbar />
-        <main class="flex-1 overflow-hidden bg-gray-100 p-6">
-          <slot />
-        </main>
-      </div>
+    <AppSidebar />
+    <div class="flex flex-col flex-1 overflow-hidden bg-background text-foreground">
+      <Topbar />
+      <main class="flex-1 overflow-hidden p-6">
+        <slot />
+      </main>
+    </div>
   </SidebarProvider>
 </template>
 
 <style scoped>
 main {
   min-height: 100vh;
-  background: #f4f7fa;
   /* Hide scrollbar */
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 main::-webkit-scrollbar {
-  display: none;           /* Chrome, Safari, Opera */
+  display: none;
 }
 </style>

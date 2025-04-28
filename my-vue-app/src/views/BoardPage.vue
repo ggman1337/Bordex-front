@@ -1,7 +1,7 @@
 <template>
   <MainLayout>
-    <div class="px-6 py-2">
-      <h1 v-if="board" class="text-3xl font-semibold mb-4" v-text="board.title" />
+    <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
+      <h1 v-if="board" class="text-3xl font-semibold mb-4 dark:text-dark-100" v-text="board.title" />
       <div class="flex gap-6 overflow-x-auto">
         <BoardColumn
           v-for="col in columns"
@@ -14,20 +14,20 @@
       <teleport to="body" v-if="showTaskModal">
         <!-- Модальное окно задачи -->
         <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-          <Card class="w-96">
+          <Card class="w-96 dark:bg-dark-700">
             <CardHeader>
-              <CardTitle>{{ editTask ? 'Редактировать задачу' : 'Создать задачу' }}</CardTitle>
+              <CardTitle class="dark:text-dark-100">{{ editTask ? 'Редактировать задачу' : 'Создать задачу' }}</CardTitle>
             </CardHeader>
             <CardContent>
               <div class="flex flex-col gap-4">
-                <input v-model="modalTitle" placeholder="Название задачи" class="w-full p-2 border rounded" />
-                <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded"></textarea>
-                <select v-model="modalStatus" class="w-full p-2 border rounded">
+                <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
+                <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"></textarea>
+                <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
                   <option value="NEW">Нужно сделать</option>
                   <option value="IN_PROGRESS">В процессе</option>
                   <option value="DONE">Готово</option>
                 </select>
-                <select v-model="modalPriority" class="w-full p-2 border rounded">
+                <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
                   <option value="LOW">Низкий</option>
                   <option value="MEDIUM">Средний</option>
                   <option value="HIGH">Высокий</option>
@@ -35,8 +35,8 @@
               </div>
             </CardContent>
             <CardFooter class="flex justify-end gap-2">
-              <CardAction><button @click="closeTaskModal" class="px-4 py-2">Отмена</button></CardAction>
-              <CardAction><button @click="submitTaskModal" class="px-4 py-2 bg-blue-600 text-white rounded">{{ editTask ? 'Сохранить' : 'Создать' }}</button></CardAction>
+              <CardAction><button @click="closeTaskModal" class="px-4 py-2 dark:text-dark-200">Отмена</button></CardAction>
+              <CardAction><button @click="submitTaskModal" class="px-4 py-2 bg-blue-600 text-white rounded dark:bg-blue-500 dark:hover:bg-blue-600">{{ editTask ? 'Сохранить' : 'Создать' }}</button></CardAction>
             </CardFooter>
           </Card>
         </div>
