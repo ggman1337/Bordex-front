@@ -121,6 +121,28 @@ const taskStore = useTaskStore()
 const route = useRoute()
 const boardId = Number(route.params.id)
 
+// Определяем контекст доски ДО использования в watch
+const isBoardView = computed(() => !isNaN(boardId))
+
+// --- Локальный список пользователей доски ---
+const boardUsersLocal = ref<User[]>([])
+
+if (!isBoardView.value) {
+  // Только для MyTasksPage: следим за task.boardId и подгружаем пользователей
+  watch(
+    () => task.boardId,
+    async (id) => {
+      console.log('TaskCard [MyTasksPage] boardId changed', { id: task.id, boardId: id, name: task.name })
+      if (!isNaN(id)) {
+        await userStore.fetchUsersFromBoard(id)
+        boardUsersLocal.value = userStore.boardUsers[id] || []
+        console.log('Fetched board users for', id, boardUsersLocal.value.map(u => u.username))
+      }
+    },
+    { immediate: true }
+  )
+}
+
 // Fetch board users for assignment dropdown when task changes
 watch(() => task.boardId, (id) => {
   userStore.fetchUsersFromBoard(id)
@@ -129,13 +151,26 @@ watch(() => task.boardId, (id) => {
 // check if current user is assigned to the task
 const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
 
-// directly use task.assignees as array of User objects
-const assignedUsers = computed<User[]>(() => task.assignees ?? [])
+// Получение списка пользователей для назначения
+const usersForAssignment = computed<User[]>(() => {
+  if (!isBoardView.value && !isNaN(task.boardId)) {
+    // Только для MyTasksPage используем локальный список
+    return boardUsersLocal.value
+  } else if (isBoardView.value && !isNaN(task.boardId)) {
+    // Для BoardPage используем глобальный store
+    return userStore.boardUsers[task.boardId] || []
+  } else {
+    return userStore.users
+  }
+})
 
-// users not yet assigned to this task
-const unassignedUsers = computed<User[]>(() =>
-  userStore.users.filter(u => !assignedUsers.value.some(a => a.id === u.id))
-)
+// Список пользователей, которым задача еще не назначена
+const unassignedUsers = computed<User[]>(() => {
+  return usersForAssignment.value.filter(u => !assignedUsers.value.some(a => a.id === u.id))
+})
+
+// Список пользователей, которым задача назначена
+const assignedUsers = computed<User[]>(() => task.assignees ?? [])
 
 const priorityLabel: Record<string, string> = {
   HIGH: 'Важно',
@@ -154,9 +189,6 @@ function onDragEnd(e: DragEvent) {
   isDragging.value = false
 }
 
-// Determine board context: boardId if on BoardPage, NaN on My Tasks
-const isBoardView = computed(() => !isNaN(boardId))
-
 // Refresh tasks list based on context (board or My Tasks)
 async function refreshTasks() {
   if (isBoardView.value) {
@@ -168,6 +200,9 @@ async function refreshTasks() {
 
 // назначить указанного пользователя к задаче и обновить список
 async function assignToUser(user: User) {
+  if (!isBoardView.value) {
+    await userStore.fetchUsers() // всегда получаем актуальный список
+  }
   await taskStore.assignUser(task.id, user.id)
   await refreshTasks()
 }

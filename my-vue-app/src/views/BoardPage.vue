@@ -271,10 +271,6 @@ watch(boardId, (newId, oldId) => {
 })
 onBeforeUnmount(() => taskStore.disconnect())
 
-defineExpose({
-  closeTaskModal,
-  openNewTaskForm
-})
 </script>
 
 <style scoped>

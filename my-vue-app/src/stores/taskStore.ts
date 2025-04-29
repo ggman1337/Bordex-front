@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client'
 import Stomp from 'webstomp-client'
 import { websocketConfig } from '@/config/websocket.config'
 import type { Task as BoardTask, BoardColumn } from '@/components/boards/types'
+import { useUserStore } from '@/stores/userStore'
 
 const baseUrl = websocketConfig.serverUrl
 
@@ -13,6 +14,8 @@ export const useTaskStore = defineStore('task', () => {
   const columns = ref<BoardColumn[]>([])
   const userTasks = ref<BoardTask[]>([])
   let stompClient: any
+  let stompUserClient: any = null
+  const userStore = useUserStore()
 
   // Преобразовать сырой объект задачи в формат Task для TaskCard.vue
   function mapTask(t: any): BoardTask {
@@ -141,6 +144,47 @@ export const useTaskStore = defineStore('task', () => {
     await fetch(`${baseUrl}/api/tasks/${taskId}/unassign-user/${userId}`, { method: 'PATCH' })
   }
 
+  // --- Вебсокет для MyTasksPage ---
+  function connectUserTasks(userId: number) {
+    if (stompUserClient) stompUserClient.disconnect()
+    const socket = new SockJS(`${baseUrl}/ws`)
+    stompUserClient = Stomp.over(socket)
+    stompUserClient.connect({}, () => {
+      stompUserClient.subscribe(`/topic/users/${userId}/tasks`, onUserTaskUpdate)
+      stompUserClient.subscribe(`/topic/users/${userId}/tasks/delete`, onUserTaskDelete)
+    })
+  }
+
+  function disconnectUserTasks() {
+    if (stompUserClient) stompUserClient.disconnect()
+    stompUserClient = null
+  }
+
+  function onUserTaskUpdate(payload: any) {
+    const raw = JSON.parse(payload.body)
+    const updatedTask = mapTask(raw)
+    const idx = userTasks.value.findIndex(t => t.id === updatedTask.id)
+    // Проверяем, назначен ли пользователь на задачу
+    const assignees = updatedTask.assignees || []
+    const isAssigned = assignees.some((u: any) => u.id === userStore.id)
+    if (!isAssigned && idx !== -1) {
+      userTasks.value.splice(idx, 1)
+    } else if (isAssigned && idx !== -1) {
+      userTasks.value[idx] = updatedTask
+    } else if (isAssigned && idx === -1) {
+      userTasks.value.push(updatedTask)
+    }
+  }
+
+  function onUserTaskDelete(payload: any) {
+    const raw = JSON.parse(payload.body)
+    const taskId = raw.id
+    const idx = userTasks.value.findIndex(t => t.id === taskId)
+    if (idx !== -1) {
+      userTasks.value.splice(idx, 1)
+    }
+  }
+
   return {
     columns,
     userTasks,
@@ -152,6 +196,8 @@ export const useTaskStore = defineStore('task', () => {
     updateTask,
     deleteTask,
     assignUser,
-    unassignUser
+    unassignUser,
+    connectUserTasks,
+    disconnectUserTasks
   }
 })

@@ -97,5 +97,13 @@ export const useBoardStore = defineStore('board', {
         this.error = e.message
       }
     },
+    async deleteBoard(id: number) {
+      try {
+        await fetch(`${baseUrl}/api/boards/${id}`, { method: 'DELETE' })
+        this.boards = this.boards.filter(b => b.id !== id)
+      } catch (e: any) {
+        this.error = e.message
+      }
+    },
   },
 })

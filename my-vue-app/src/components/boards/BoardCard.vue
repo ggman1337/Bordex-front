@@ -9,6 +9,7 @@
           </DropdownMenuTrigger>
           <DropdownMenuContent class="w-32">
             <DropdownMenuItem @click="emit('updateBoard', board)">Изменить</DropdownMenuItem>
+            <DropdownMenuItem class="text-red-500" @click="openDeleteModal">Удалить</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -25,6 +26,7 @@
     <div class="flex items-center justify-between mt-auto">
       <button @click="openBoard" class="text-primary hover:underline text-sm">Открыть доску</button>
     </div>
+    <BoardDeleteModal v-if="showDeleteModal" :board="board" @close="closeDeleteModal" @deleted="onDeleted" />
   </div>
 </template>
 
@@ -35,6 +37,7 @@ import { ref, onUnmounted, toRef } from 'vue'
 import type { Board as BoardType } from '@/components/boards/types'
 import DropdownMenu from '@/components/ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import BoardDeleteModal from './BoardDeleteModal.vue'
 
 const props = defineProps<{ board: BoardType }>()
 const board = toRef(props, 'board')
@@ -43,14 +46,19 @@ const boardStore = useBoardStore()
 const showDescription = ref(false)
 let hoverTimer: number | null = null
 
+const showDeleteModal = ref(false)
+function openDeleteModal() { showDeleteModal.value = true }
+function closeDeleteModal() { showDeleteModal.value = false }
+function onDeleted() { emit('deleteBoard', board.value) }
+
 const emit = defineEmits<{
   (e: 'updateBoard', board: BoardType): void;
+  (e: 'deleteBoard', board: BoardType): void;
 }>()
 
 function openBoard() {
-  // Сохраняем последнюю открытую доску
   boardStore.setCurrentBoard(board.value.id)
-  router.push({ name: 'Board', params: { id: board.value.id } })
+  router.push(`/boards/${board.value.id}`)
 }
 
 function onMouseEnter() {
@@ -76,4 +84,3 @@ onUnmounted(() => {
 
 <style scoped>
 </style>
-  
