@@ -51,24 +51,48 @@ export const useBoardStore = defineStore('board', {
         this.loading = false
       }
     },
-    async createBoard(name: string) {
+    async createBoard(name: string, description: string = 'Новая доска') {
       try {
         const res = await fetch(`${baseUrl}/api/boards`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description: 'New Board', scope: 'PRIVATE' }),
+          body: JSON.stringify({ name, description, scope: 'PRIVATE' }),
         })
         const board = await res.json()
         const newBoard = {
           id: board.id,
           title: board.name,
-          description: board.description,
+          description: board.description || description,
           scope: board.scope,
           owner: board.owner,
           membersCount: board.membersCount ?? 0,
           tasksCount: board.tasksCount ?? 0,
         }
         this.boards.push(newBoard)
+      } catch (e: any) {
+        this.error = e.message
+      }
+    },
+    async updateBoard(id: number, data: { name: string; description?: string; scope?: string }) {
+      try {
+        const res = await fetch(`${baseUrl}/api/boards/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: data.name, description: data.description, scope: data.scope }),
+        })
+        const updated = await res.json()
+        const idx = this.boards.findIndex(b => b.id === id)
+        if (idx !== -1) {
+          this.boards[idx] = {
+            id: updated.id,
+            title: updated.name,
+            description: updated.description,
+            scope: updated.scope,
+            owner: updated.owner,
+            membersCount: updated.membersCount ?? 0,
+            tasksCount: updated.tasksCount ?? 0,
+          }
+        }
       } catch (e: any) {
         this.error = e.message
       }

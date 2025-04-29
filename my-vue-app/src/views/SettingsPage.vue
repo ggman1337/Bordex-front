@@ -32,7 +32,7 @@
                   <Switch v-model:checked="settings.autosave" />
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-gray-700 dark:text-gray-300">Темная тема</span>
+                  <span class="text-gray-700 dark:text-gray-300">Настройка темы</span>
                   <ThemeToggle />
                 </div>
                 <div class="flex items-center justify-between">
