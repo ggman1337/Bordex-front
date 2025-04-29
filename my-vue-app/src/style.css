@@ -43,11 +43,11 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: #eef3f7f6;
   --foreground: oklch(0.145 0 0);
-  --card: #f4f7fa;
+  --card: #ffffff;
   --card-foreground: var(--foreground);
-  --task: #e1e7ee;
+  --task: #e3f2f3;
   --task-foreground: var(--foreground);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);

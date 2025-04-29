@@ -9,12 +9,12 @@
           :column="col"
           @createTask="openNewTaskForm"
           @updateTask="onTaskUpdate"
-          @deleteTask="deleteTask"
+          @deleteTask="openDeleteModal"
           @assignTask="assignCurrentUser"
           @assignToUser="assignToUser"
         />
       </div>
-      <teleport to="body" v-if="showTaskModal">
+      <teleport to="body" v-if="showTaskModal && !editTask">
         <!-- Модальное окно задачи -->
         <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
           <Card class="w-96 dark:bg-dark-700">
@@ -82,6 +82,8 @@
           </Card>
         </div>
       </teleport>
+      <TaskModal v-if="showTaskModal && editTask" :task="editTask!" @close="closeTaskModal" @updated="onModalUpdated" />
+      <TaskDeleteModal v-if="showDeleteModal" :task="selectedDeleteTask!" @close="closeDeleteModal" @deleted="onDeleted" />
     </div>
   </MainLayout>
 </template>
@@ -98,7 +100,7 @@ import CardAction from '@/components/ui/card/CardAction.vue'
 import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
 import { tagValues } from '@/components/boards/types.ts'
 import { useRoute } from 'vue-router'
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useBoardStore } from '@/stores/boardStore'
 import { useTaskStore } from '@/stores/taskStore'
 import { useUserStore, type User } from '@/stores/userStore'
@@ -113,16 +115,16 @@ import {
   type DateValue,
 } from '@internationalized/date'
 import { CalendarIcon } from 'lucide-vue-next'
+import TaskModal from '@/components/tasks/TaskModal.vue'
+import TaskDeleteModal from '@/components/tasks/TaskDeleteModal.vue'
 
 const route = useRoute()
-const boardId = Number(route.params.id)
+const boardId = computed(() => Number(route.params.id))
 const boardStore = useBoardStore()
 const taskStore = useTaskStore()
 const userStore = useUserStore()
-const board = computed(() => boardStore.boardById(boardId))
+const board = computed(() => boardStore.boardById(boardId.value))
 const columns = computed(() => taskStore.columns)
-
-boardStore.fetchBoards()
 
 // Модальный режим
 const showTaskModal = ref(false)
@@ -135,6 +137,10 @@ const modalPriority = ref<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
 const modalTag = ref<TagValue>(tagValues[0])
 const modalDeadline = ref<DateValue | undefined>(undefined)
 const df = new DateFormatter('ru-RU', { dateStyle: 'long' })
+
+// Deletion modal state and handlers
+const showDeleteModal = ref(false)
+const selectedDeleteTask = ref<BoardTask | null>(null)
 
 // Открыть форму создания
 function openNewTaskForm(columnId: number) {
@@ -158,7 +164,7 @@ async function onTaskUpdate(payload: BoardTask | { id: number, status: 'NEW' | '
   }
   // Если это drop: {id, status}
   await taskStore.updateTask(payload.id, { status: payload.status })
-  await taskStore.fetchTasks(boardId)
+  // fetchTasks убран для избежания гонки с WebSocket
 }
 
 // Открыть форму редактирования
@@ -191,7 +197,7 @@ async function submitTaskModal() {
       deadline,
     })
   } else {
-    await taskStore.createTask(boardId, {
+    await taskStore.createTask(boardId.value, {
       name: modalTitle.value,
       description: modalDescription.value,
       status: modalStatus.value,
@@ -201,34 +207,67 @@ async function submitTaskModal() {
     })
   }
   showTaskModal.value = false
-  await taskStore.fetchTasks(boardId)
+  await taskStore.fetchTasks(boardId.value)
 }
 
 // удаление задачи
-async function deleteTask(task: BoardTask) {
-  await taskStore.deleteTask(boardId, task.id)
+function openDeleteModal(task: BoardTask) {
+  selectedDeleteTask.value = task
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  selectedDeleteTask.value = null
+}
+
+async function onDeleted() {
+  await taskStore.fetchTasks(boardId.value)
+  closeDeleteModal()
+}
+
+// Handle TaskModal updated event
+async function onModalUpdated() {
+  closeTaskModal()
+  await taskStore.fetchTasks(boardId.value)
 }
 
 // assign current user to task and refresh task list
 async function assignCurrentUser(task: BoardTask) {
   await taskStore.assignUser(task.id, userStore.id)
-  await taskStore.fetchTasks(boardId)
+  await taskStore.fetchTasks(boardId.value)
 }
 
 // assign specified user and refresh tasks
 async function assignToUser(task: BoardTask, user: User) {
   await taskStore.assignUser(task.id, user.id)
-  await taskStore.fetchTasks(boardId)
+  await taskStore.fetchTasks(boardId.value)
 }
 
-onMounted(() => {
-  // load current user for assignment highlighting
-  userStore.fetchCurrentUser()
-  // load all users for assignment from board
-  userStore.fetchUsersFromBoard(boardId)
-  // load tasks
-  taskStore.fetchTasks(boardId)
-  taskStore.connect(boardId)
+// Load boards and tasks, and subscribe via WebSocket when boardId changes
+async function loadData(id: number) {
+  // очистить предыдущие задачи сразу при смене доски
+  taskStore.columns = []
+  // загрузить доски
+  await boardStore.fetchBoards()
+  // загрузить текущего пользователя и список участников доски
+  await userStore.fetchCurrentUser()
+  await userStore.fetchUsersFromBoard(id)
+  // обновить задачи по доске
+  taskStore.disconnect()
+  await taskStore.fetchTasks(id)
+  taskStore.connect(id)
+  // открыть модальное окно редактирования при переходе из Мои задачи
+  if (route.query.editTaskId) {
+    const editId = Number(route.query.editTaskId)
+    const allTasks = taskStore.columns.flatMap(col => col.tasks)
+    const taskToEdit = allTasks.find(t => t.id === editId)
+    if (taskToEdit) openEditTaskForm(taskToEdit)
+  }
+}
+onMounted(() => loadData(boardId.value))
+watch(boardId, (newId, oldId) => {
+  if (newId !== oldId) loadData(newId)
 })
 onBeforeUnmount(() => taskStore.disconnect())
 

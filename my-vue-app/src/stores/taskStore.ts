@@ -11,12 +11,15 @@ const baseUrl = websocketConfig.serverUrl
 
 export const useTaskStore = defineStore('task', () => {
   const columns = ref<BoardColumn[]>([])
+  const userTasks = ref<BoardTask[]>([])
   let stompClient: any
 
   // Преобразовать сырой объект задачи в формат Task для TaskCard.vue
   function mapTask(t: any): BoardTask {
     return {
       id: t.id,
+      // assign boardId from nested board object
+      boardId: t.board.id,
       name: t.name,
       description: t.description ?? '',
       status: t.status as 'NEW' | 'IN_PROGRESS' | 'DONE',
@@ -37,6 +40,13 @@ export const useTaskStore = defineStore('task', () => {
       { id: 2, title: 'В процессе', tasks: mapped.filter((t: BoardTask) => t.status === 'IN_PROGRESS') },
       { id: 3, title: 'Готово', tasks: mapped.filter((t: BoardTask) => t.status === 'DONE') },
     ]
+  }
+
+  async function fetchTasksForUser(userId: number, page = 0, size = 200) {
+    const res = await fetch(`${baseUrl}/api/tasks?assigneeIds=${userId}&page=${page}&size=${size}`)
+    const data: any = await res.json()
+    const raw: any[] = Array.isArray(data) ? data : data.content || []
+    userTasks.value = raw.map(mapTask)
   }
 
   function connect(boardId: number) {
@@ -67,9 +77,9 @@ export const useTaskStore = defineStore('task', () => {
     columns.value.forEach((col: BoardColumn) => {
       col.tasks = col.tasks.filter((t: BoardTask) => t.id !== task.id)
     })
-    // добавляем в нужную колонку
+    // добавляем в нужную колонку, если её там ещё нет
     const newCol = columns.value.find(c => (task.status === 'NEW' ? 1 : task.status === 'IN_PROGRESS' ? 2 : 3) === c.id)
-    if (newCol) newCol.tasks.push(task)
+    if (newCol && !newCol.tasks.some(t => t.id === task.id)) newCol.tasks.push(task)
   }
 
   async function createTask(boardId: number, taskData: {
@@ -133,7 +143,9 @@ export const useTaskStore = defineStore('task', () => {
 
   return {
     columns,
+    userTasks,
     fetchTasks,
+    fetchTasksForUser,
     connect,
     disconnect,
     createTask,

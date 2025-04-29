@@ -1,8 +1,8 @@
 <template>
   <MainLayout>
     <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
-        <h1 class="text-3xl font-semibold mb-6 text-gray-900 dark:text-gray-100">Настройки</h1>
-      <div class="flex flex-col md:flex-row gap-8 w-full h-full p-6 bg-gray-100 dark:bg-[#181b20] min-h-screen">
+        <h1 class="text-3xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Настройки</h1>
+      <div class="flex flex-col md:flex-row gap-8 w-full h-full p-6 bg-gray-100 dark:bg-[#181b20] min-h-screen shadow-md rounded-2xl">
         <div class="w-full md:w-1/4 mb-6 md:mb-0">
           <div class="bg-white dark:bg-[#23272f] rounded-xl shadow p-4">
             <nav class="space-y-2">
@@ -104,4 +104,10 @@ const settings = ref({
 </script>
 
 <style scoped>
+.shadow-md {
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.13);
+}
+.dark .shadow-md {
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.45);
+}
 </style>

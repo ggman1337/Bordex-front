@@ -1,0 +1,140 @@
+<template>
+  <teleport to="body">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
+      <Card class="w-96 dark:bg-dark-700">
+        <CardHeader>
+          <CardTitle class="dark:text-dark-100">Редактировать задачу</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex flex-col gap-4">
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Название</span>
+              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
+            </label>
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Описание</span>
+              <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"></textarea>
+            </label>
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Тег</span>
+              <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                <option v-for="t in tagValues" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </label>
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Статус</span>
+              <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                <option value="NEW">Нужно сделать</option>
+                <option value="IN_PROGRESS">В процессе</option>
+                <option value="DONE">Готово</option>
+              </select>
+            </label>
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Приоритет</span>
+              <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+                <option value="LOW">Не важно</option>
+                <option value="MEDIUM">Нормально</option>
+                <option value="HIGH">Важно</option>
+              </select>
+            </label>
+            <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Дедлайн</span>
+              <Popover>
+                <PopoverTrigger as-child>
+                  <Button
+                    variant="outline"
+                    :class="cn('w-full justify-start text-left font-normal', !modalDeadline && 'text-muted-foreground')"
+                  >
+                    <CalendarIcon class="mr-2 h-4 w-4" />
+                    {{ modalDeadline ? df.format(modalDeadline.toDate(getLocalTimeZone())) : 'Выберите дату' }}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                  <Calendar v-model="modalDeadline" initial-focus />
+                </PopoverContent>
+              </Popover>
+            </label>
+          </div>
+        </CardContent>
+        <CardFooter class="flex justify-end gap-2">
+          <CardAction><button @click="closeModal" class="px-4 py-2 dark:text-dark-200">Отмена</button></CardAction>
+          <CardAction><button @click="submitModal" class="px-4 py-2 bg-blue-600 text-white rounded dark:bg-blue-500 dark:hover:bg-blue-600">Сохранить</button></CardAction>
+        </CardFooter>
+      </Card>
+    </div>
+  </teleport>
+</template>
+
+<script setup lang="ts">
+import { defineProps, defineEmits, ref, watch } from 'vue'
+import Card from '@/components/ui/card/Card.vue'
+import CardHeader from '@/components/ui/card/CardHeader.vue'
+import CardTitle from '@/components/ui/card/CardTitle.vue'
+import CardContent from '@/components/ui/card/CardContent.vue'
+import CardFooter from '@/components/ui/card/CardFooter.vue'
+import CardAction from '@/components/ui/card/CardAction.vue'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date'
+import { CalendarIcon } from 'lucide-vue-next'
+import { cn } from '@/utils'
+import { useTaskStore } from '@/stores/taskStore'
+import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
+import { tagValues } from '@/components/boards/types.ts'
+
+const props = defineProps<{ task: BoardTask }>()
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'updated'): void
+}>()
+
+const taskStore = useTaskStore()
+
+const modalTitle = ref(props.task.name)
+const modalDescription = ref(props.task.description ?? '')
+const modalStatus = ref(props.task.status)
+// ограниченная типизация приоритета
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH'
+const modalPriority = ref<Priority>((props.task.priority as Priority) ?? 'LOW')
+const modalTag = ref<TagValue>(props.task.tag.value)
+// пếpредаем дату без явного типа, v-model сам определит
+const modalDeadline = ref(
+  props.task.deadline ? parseDate(props.task.deadline.slice(0, 10)) : undefined
+)
+
+watch(
+  () => props.task,
+  (t) => {
+    modalTitle.value = t.name
+    modalDescription.value = t.description ?? ''
+    modalStatus.value = t.status
+    modalPriority.value = (t.priority as Priority) ?? 'LOW'
+    modalTag.value = t.tag.value
+    modalDeadline.value = t.deadline ? parseDate(t.deadline.slice(0, 10)) : undefined
+  }
+)
+
+const df = new DateFormatter('ru-RU', { dateStyle: 'long' })
+
+function closeModal() {
+  emit('close')
+}
+
+async function submitModal() {
+  const deadline = modalDeadline.value ? modalDeadline.value.toString() + 'T00:00:00' : undefined
+  await taskStore.updateTask(props.task.id, {
+    name: modalTitle.value,
+    description: modalDescription.value,
+    status: modalStatus.value,
+    priority: modalPriority.value,
+    tag: modalTag.value,
+    deadline,
+  })
+  emit('updated')
+  emit('close')
+}
+</script>
+
+<style scoped>
+</style>

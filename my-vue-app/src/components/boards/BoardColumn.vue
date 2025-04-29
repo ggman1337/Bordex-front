@@ -40,7 +40,6 @@ function onDragStart(task: Task, event: globalThis.DragEvent) {
 function onDrop(event: globalThis.DragEvent) {
   const taskId = event.dataTransfer?.getData('taskId')
   if (taskId) {
-    // Определяем статус по title
     let status: 'NEW' | 'IN_PROGRESS' | 'DONE' = 'NEW';
     if (column.title === 'В процессе') status = 'IN_PROGRESS';
     else if (column.title === 'Готово') status = 'DONE';

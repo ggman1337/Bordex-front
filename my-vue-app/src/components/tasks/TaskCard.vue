@@ -8,6 +8,7 @@
     @dragstart.self="onDragStart"
     @dragend.self="onDragEnd"
     draggable="true"
+    v-bind="$attrs"
   >
     <div class="flex items-center justify-between mb-1">
       <span
@@ -19,7 +20,7 @@
           <button class="text-muted-foreground hover:text-foreground text-xl"><span>...</span></button>
         </DropdownMenuTrigger>
         <DropdownMenuContent class="w-32">
-          <DropdownMenuItem @click="emit('updateTask', task)">Изменить</DropdownMenuItem>
+          <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -53,7 +54,7 @@
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" @click="emit('deleteTask', task)">Удалить</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -74,12 +75,9 @@
         v-if="task.priority"
         :class="[
           'absolute right-0 bottom-0 mb-1 mr-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase z-10 transition-colors duration-200',
-          task.priority === 'HIGH' && !$attrs['data-theme-dark'] ? 'bg-[#ffe5e5] text-[#e23b3b] border border-[#ffd6d6] shadow-[0_2px_8px_0_rgba(255,80,80,0.12)]' : '',
-          task.priority === 'HIGH' && $attrs['data-theme-dark'] ? 'bg-[#2a0000] text-[#ff8cc3] border border-[#ff8cc3] shadow-[0_2px_8px_0_rgba(255,140,195,0.18)]' : '',
-          task.priority === 'MEDIUM' && !$attrs['data-theme-dark'] ? 'bg-[#fffbe6] text-[#bfa900] border border-[#ffe066] shadow-[0_2px_8px_0_rgba(255,224,102,0.12)]' : '',
-          task.priority === 'MEDIUM' && $attrs['data-theme-dark'] ? 'bg-[#2d2a00] text-[#ffe066] border border-[#ffe066] shadow-[0_2px_8px_0_rgba(255,224,102,0.18)]' : '',
-          task.priority === 'LOW' && !$attrs['data-theme-dark'] ? 'bg-[#e6fff2] text-[#13c07c] border border-[#bdf5d7] shadow-[0_2px_8px_0_rgba(19,192,124,0.12)]' : '',
-          task.priority === 'LOW' && $attrs['data-theme-dark'] ? 'bg-[#00331d] text-[#13c07c] border border-[#13c07c] shadow-[0_2px_8px_0_rgba(19,192,124,0.18)]' : ''
+          task.priority === 'HIGH' ? 'bg-[#ffe5e5] text-[#e23b3b] border border-[#ffd6d6] shadow-[0_2px_8px_0_rgba(255,80,80,0.12)] dark:bg-[#2a0000] dark:text-[#ff8cc3] dark:border-[#ff8cc3] dark:shadow-[0_2px_8px_0_rgba(255,140,195,0.18)]' : '',
+          task.priority === 'MEDIUM' ? 'bg-[#fffbe6] text-[#bfa900] border border-[#ffe066] shadow-[0_2px_8px_0_rgba(255,224,102,0.12)] dark:bg-[#2d2a00] dark:text-[#ffe066] dark:border-[#ffe066] dark:shadow-[0_2px_8px_0_rgba(255,224,102,0.18)]' : '',
+          task.priority === 'LOW' ? 'bg-[#e6fff2] text-[#13c07c] border border-[#bdf5d7] shadow-[0_2px_8px_0_rgba(19,192,124,0.12)] dark:bg-[#00331d] dark:text-[#13c07c] dark:border-[#13c07c] dark:shadow-[0_2px_8px_0_rgba(19,192,124,0.18)]' : ''
         ]"
         :title="priorityLabel[task.priority]"
       >
@@ -87,13 +85,15 @@
       </span>
     </div>
   </div>
+  <TaskModal v-if="showEditModal" :task="task" @close="closeEditModal" @updated="onUpdated" />
+  <TaskDeleteModal v-if="showDeleteModal" :task="task" @close="closeDeleteModal" @deleted="onDeleted" />
 </template>
 
 <script setup lang="ts">
 import type { Task } from '../boards/types.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 import type { User } from '@/stores/userStore.ts'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DropdownMenu from '@/components/ui/dropdown-menu/DropdownMenu.vue'
 import {
   DropdownMenuTrigger,
@@ -106,22 +106,25 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTaskStore } from '@/stores/taskStore.ts'
 import { useRoute } from 'vue-router'
-import { ref } from 'vue'
+import TaskModal from './TaskModal.vue'
+import TaskDeleteModal from './TaskDeleteModal.vue'
 
-// события задачи: редактирование, удаление, назначение
-const emit = defineEmits<{
-  (e: 'updateTask', task: Task): void;
-  (e: 'deleteTask', task: Task): void;
-  (e: 'assignTask', task: Task): void;
-  (e: 'assignToUser', user: User): void;
-  (e: 'unassignUser', user: User): void;
-}>()
-
+// props
 const { task } = defineProps<{ task: Task }>()
+
+// modal state
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
+
 const userStore = useUserStore()
 const taskStore = useTaskStore()
 const route = useRoute()
 const boardId = Number(route.params.id)
+
+// Fetch board users for assignment dropdown when task changes
+watch(() => task.boardId, (id) => {
+  userStore.fetchUsersFromBoard(id)
+}, { immediate: true })
 
 // check if current user is assigned to the task
 const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
@@ -143,24 +146,65 @@ const priorityLabel: Record<string, string> = {
 const isDragging = ref(false)
 
 function onDragStart(e: DragEvent) {
-  isDragging.value = true
+  e.dataTransfer?.setData('taskId', String(task.id));
+  isDragging.value = true;
 }
 
 function onDragEnd(e: DragEvent) {
   isDragging.value = false
 }
 
+// Determine board context: boardId if on BoardPage, NaN on My Tasks
+const isBoardView = computed(() => !isNaN(boardId))
+
+// Refresh tasks list based on context (board or My Tasks)
+async function refreshTasks() {
+  if (isBoardView.value) {
+    await taskStore.fetchTasks(boardId)
+  } else {
+    await taskStore.fetchTasksForUser(userStore.id)
+  }
+}
+
 // назначить указанного пользователя к задаче и обновить список
 async function assignToUser(user: User) {
   await taskStore.assignUser(task.id, user.id)
-  await taskStore.fetchTasks(boardId)
+  await refreshTasks()
 }
 
 // отменить назначение указанного пользователя к задаче и обновить список
 async function unassignUser(user: User) {
   await taskStore.unassignUser(task.id, user.id)
-  await taskStore.fetchTasks(boardId)
+  await refreshTasks()
 }
+
+// edit modal handlers
+function openEditModal() {
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+}
+
+async function onUpdated() {
+  await refreshTasks()
+}
+
+// delete modal handlers
+function openDeleteModal() {
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+}
+
+async function onDeleted() {
+  await refreshTasks()
+}
+
+const emit = defineEmits(['dragstart', 'updateTask', 'deleteTask'])
 </script>
 
 <style scoped>

@@ -140,6 +140,7 @@ export const tagValues: TagValue[] = [
 
 export interface Task {
   id: number;
+  boardId: number; // ID of the board this task belongs to
   name: string;
   description?: string;
   status: 'NEW' | 'IN_PROGRESS' | 'DONE';
