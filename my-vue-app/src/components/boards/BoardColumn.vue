@@ -8,17 +8,18 @@
       <span class="font-semibold text-lg flex-1">{{ column.title }}</span>
       <button class="ml-2 text-xl text-muted-foreground hover:text-foreground" @click="emit('createTask', column.id)">+</button>
     </div>
-    <div class="flex flex-col gap-4">
-      <TaskCard
-        v-for="task in column.tasks"
-        :key="task.id"
-        :task="task"
-        draggable="true"
-        @dragstart="(event: globalThis.DragEvent) => onDragStart(task, event)"
-        @updateTask="emit('updateTask', $event)"
-        @deleteTask="emit('deleteTask', $event)"
-      />
-    </div>
+    <transition-group name="task-fade" tag="div" class="flex flex-col gap-4">
+      <template v-for="task in column.tasks" :key="task.id">
+        <TaskCard
+          v-if="task"
+          :task="task"
+          draggable="true"
+          @dragstart="(event: globalThis.DragEvent) => onDragStart(task, event)"
+          @updateTask="emit('updateTask', $event)"
+          @deleteTask="emit('deleteTask', $event)"
+        />
+      </template>
+    </transition-group>
   </div>
 </template>
 
@@ -49,4 +50,13 @@ function onDrop(event: globalThis.DragEvent) {
 </script>
 
 <style scoped>
+.task-fade-move {
+  transition: transform 0.2s;
+}
+.task-fade-enter-active, .task-fade-leave-active {
+  transition: opacity 0.2s;
+}
+.task-fade-enter-from, .task-fade-leave-to {
+  opacity: 0;
+}
 </style>

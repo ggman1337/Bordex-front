@@ -25,6 +25,17 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes,
+    scrollBehavior(_to, _from, _savedPosition) {
+        // fallback для мгновенного скролла (например, при навигации назад)
+        return false
+    }
 });
+
+// Плавная анимация при переходе на новую страницу
+router.afterEach(() => {
+    setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 0)
+})
 
 export default router;

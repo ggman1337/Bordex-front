@@ -43,7 +43,10 @@ function toggleSidebar() {
 }
 
 useEventListener('keydown', (event: KeyboardEvent) => {
-  if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+  // Ctrl+B (английская) или Ctrl+И (русская)
+  const isCtrlB = (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey))
+  const isCtrlI = ((event.key === 'и' || event.key === 'И') && (event.metaKey || event.ctrlKey))
+  if (isCtrlB || isCtrlI) {
     event.preventDefault()
     toggleSidebar()
   }

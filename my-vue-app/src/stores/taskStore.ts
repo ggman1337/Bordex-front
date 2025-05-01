@@ -39,9 +39,9 @@ export const useTaskStore = defineStore('task', () => {
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     const mapped: BoardTask[] = raw.map(mapTask)
     columns.value = [
-      { id: 1, title: 'Нужно сделать', tasks: mapped.filter((t: BoardTask) => t.status === 'NEW') },
-      { id: 2, title: 'В процессе', tasks: mapped.filter((t: BoardTask) => t.status === 'IN_PROGRESS') },
-      { id: 3, title: 'Готово', tasks: mapped.filter((t: BoardTask) => t.status === 'DONE') },
+      { id: 1, title: 'Нужно сделать', tasks: mapped.filter((t: BoardTask) => t.status === 'NEW').sort((a, b) => a.id - b.id) },
+      { id: 2, title: 'В процессе', tasks: mapped.filter((t: BoardTask) => t.status === 'IN_PROGRESS').sort((a, b) => a.id - b.id) },
+      { id: 3, title: 'Готово', tasks: mapped.filter((t: BoardTask) => t.status === 'DONE').sort((a, b) => a.id - b.id) },
     ]
   }
 
@@ -82,7 +82,11 @@ export const useTaskStore = defineStore('task', () => {
     })
     // добавляем в нужную колонку, если её там ещё нет
     const newCol = columns.value.find(c => (task.status === 'NEW' ? 1 : task.status === 'IN_PROGRESS' ? 2 : 3) === c.id)
-    if (newCol && !newCol.tasks.some(t => t.id === task.id)) newCol.tasks.push(task)
+    if (newCol && !newCol.tasks.some(t => t.id === task.id)) {
+      newCol.tasks.push(task)
+      // сортировка по id (можно заменить на другое поле)
+      newCol.tasks.sort((a, b) => a.id - b.id)
+    }
   }
 
   async function createTask(boardId: number, taskData: {
