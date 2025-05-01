@@ -30,6 +30,7 @@ export const useTaskStore = defineStore('task', () => {
       assignees: t.assignees ?? [],
       priority: t.priority ?? 'LOW',
       deadline: t.deadline ?? null,
+      progress: typeof t.progress === 'number' ? t.progress : 0,
     }
   }
 
@@ -96,6 +97,7 @@ export const useTaskStore = defineStore('task', () => {
     priority: 'LOW' | 'MEDIUM' | 'HIGH'
     tag: string
     deadline?: string | null
+    progress?: number
   }) {
     await fetch(`${baseUrl}/api/tasks/${boardId}`, {
       method: 'POST',
@@ -107,7 +109,8 @@ export const useTaskStore = defineStore('task', () => {
         priority: taskData.priority,
         tag: taskData.tag,
         deadline: taskData.deadline ?? null,
-      })
+        progress: taskData.progress ?? 0,
+    })
     })
     // refresh task list
     fetchTasks(boardId)
@@ -122,6 +125,7 @@ export const useTaskStore = defineStore('task', () => {
       priority: 'LOW' | 'MEDIUM' | 'HIGH'
       tag: string
       deadline?: string | null
+      progress?: number
     }>
   ) {
     await fetch(`${baseUrl}/api/tasks/${taskId}`, {

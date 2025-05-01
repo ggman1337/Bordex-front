@@ -1,91 +1,95 @@
 <template>
   <div>
-    <div
-      class="bg-[var(--task)] text-[var(--task-foreground)] rounded-xl p-4 shadow flex flex-col gap-2 transition-all duration-200"
-      :class="[
-        { 'border-l-4 border-[var(--border-primary)]': isAssigned },
-        isDragging ? 'z-20 shadow-2xl scale-105 opacity-80' : ''
-      ]"
-      @dragstart.self="onDragStart"
-      @dragend.self="onDragEnd"
-      draggable="true"
-      v-bind="$attrs"
-    >
-      <div class="flex items-center justify-between mb-1">
-        <span
-          class="text-xs font-semibold px-2 py-1 rounded-full text-white"
-          :style="{ backgroundColor: task.tag.color }"
-        >{{ task.tag.label }}</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button class="text-muted-foreground hover:text-foreground text-xl"><span>...</span></button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent class="w-32">
-            <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                Назначить
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent class="min-w-[160px] py-1">
-                <DropdownMenuItem
-                  v-for="user in unassignedUsers"
-                  :key="user.id"
-                  @click="assignToUser(user)"
-                  class="px-4 py-2"
-                >
-                  {{ user.username }}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuSeparator />
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                Снять
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent class="min-w-[160px] py-1">
-                <DropdownMenuItem
-                  v-for="user in assignedUsers"
-                  :key="user.id"
-                  @click="unassignUser(user)"
-                  class="px-4 py-2"
-                >
-                  {{ user.username }}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div>
-        <div class="font-semibold text-base mb-1">{{ task.name }}</div>
-        <div class="text-xs text-muted-foreground">{{ task.description }}</div>
-      </div>
-      <div class="flex items-center mt-2 relative">
-        <div class="flex -space-x-2">
-          <template v-for="user in assignedUsers" :key="user.id">
-            <span
-              :title="`${user.firstName} ${user.lastName}`"
-              class="w-6 h-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-xs font-bold border-2 border-border shadow"
-            >{{ user.firstName?.[0] || '' }}{{ user.lastName?.[0] || '' }}</span>
-          </template>
+    <transition name="task-collapse">
+      <div v-if="visible" class="bg-[var(--task)] text-[var(--task-foreground)] rounded-xl p-4 shadow flex flex-col gap-2 transition-all duration-200"
+        :class="[
+          { 'border-l-4 border-[var(--border-primary)]': isAssigned },
+          isDragging ? 'z-20 shadow-2xl scale-105 opacity-80' : ''
+        ]"
+        @dragstart.self="onDragStart"
+        @dragend.self="onDragEnd"
+        draggable="true"
+        v-bind="$attrs"
+      >
+        <div class="flex items-center justify-between mb-1">
+          <span
+            class="text-xs font-semibold px-2 py-1 rounded-full text-white"
+            :style="{ backgroundColor: task.tag.color }"
+          >{{ task.tag.label }}</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button class="text-muted-foreground hover:text-foreground text-xl"><span>...</span></button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-32">
+              <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Назначить
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent class="min-w-[160px] py-1">
+                  <DropdownMenuItem
+                    v-for="user in unassignedUsers"
+                    :key="user.id"
+                    @click="assignToUser(user)"
+                    class="px-4 py-2"
+                  >
+                    {{ user.username }}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Снять
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent class="min-w-[160px] py-1">
+                  <DropdownMenuItem
+                    v-for="user in assignedUsers"
+                    :key="user.id"
+                    @click="unassignUser(user)"
+                    class="px-4 py-2"
+                  >
+                    {{ user.username }}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <span
-          v-if="task.priority"
-          :class="[
-            'absolute right-0 bottom-0 mb-1 mr-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase z-10 transition-colors duration-200',
-            task.priority === 'HIGH' ? 'bg-[#ffe5e5] text-[#e23b3b] border border-[#ffd6d6] shadow-[0_2px_8px_0_rgba(255,80,80,0.12)] dark:bg-[#2a0000] dark:text-[#ff8cc3] dark:border-[#ff8cc3] dark:shadow-[0_2px_8px_0_rgba(255,140,195,0.18)]' : '',
-            task.priority === 'MEDIUM' ? 'bg-[#fffbe6] text-[#bfa900] border border-[#ffe066] shadow-[0_2px_8px_0_rgba(255,224,102,0.12)] dark:bg-[#2d2a00] dark:text-[#ffe066] dark:border-[#ffe066] dark:shadow-[0_2px_8px_0_rgba(255,224,102,0.18)]' : '',
-            task.priority === 'LOW' ? 'bg-[#e6fff2] text-[#13c07c] border border-[#bdf5d7] shadow-[0_2px_8px_0_rgba(19,192,124,0.12)] dark:bg-[#00331d] dark:text-[#13c07c] dark:border-[#13c07c] dark:shadow-[0_2px_8px_0_rgba(19,192,124,0.18)]' : ''
-          ]"
-          :title="priorityLabel[task.priority]"
-        >
-          {{ priorityLabel[task.priority] }}
-        </span>
+        <div>
+          <div class="font-semibold text-base mb-1">{{ task.name }}</div>
+          <div class="text-xs text-muted-foreground mb-1">{{ task.description }}</div>
+        </div>
+        <div class="flex items-center mt-2 relative">
+          <div class="flex -space-x-2">
+            <template v-for="user in assignedUsers" :key="user.id">
+              <span
+                :title="`${user.firstName} ${user.lastName}`"
+                class="w-6 h-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-xs font-bold border-2 border-border shadow"
+              >{{ user.firstName?.[0] || '' }}{{ user.lastName?.[0] || '' }}</span>
+            </template>
+          </div>
+          <span
+            v-if="task.priority"
+            :class="[
+              'absolute right-0 bottom-0 mb-1 mr-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase z-10 transition-colors duration-200',
+              task.priority === 'HIGH' ? 'bg-[#ffe5e5] text-[#e23b3b] border border-[#ffd6d6] shadow-[0_2px_8px_0_rgba(255,80,80,0.12)] dark:bg-[#2a0000] dark:text-[#ff8cc3] dark:border-[#ff8cc3] dark:shadow-[0_2px_8px_0_rgba(255,140,195,0.18)]' : '',
+              task.priority === 'MEDIUM' ? 'bg-[#fffbe6] text-[#bfa900] border border-[#ffe066] shadow-[0_2px_8px_0_rgba(255,224,102,0.12)] dark:bg-[#2d2a00] dark:text-[#ffe066] dark:border-[#ffe066] dark:shadow-[0_2px_8px_0_rgba(255,224,102,0.18)]' : '',
+              task.priority === 'LOW' ? 'bg-[#e6fff2] text-[#13c07c] border border-[#bdf5d7] shadow-[0_2px_8px_0_rgba(19,192,124,0.12)] dark:bg-[#00331d] dark:text-[#13c07c] dark:border-[#13c07c] dark:shadow-[0_2px_8px_0_rgba(19,192,124,0.18)]' : ''
+            ]"
+            :title="priorityLabel[task.priority]"
+          >
+            {{ priorityLabel[task.priority] }}
+          </span>
+        </div>
+        <div v-if="typeof task.progress === 'number'" class="w-full mt-2">
+          <Progress :model-value="task.progress" />
+        </div>
       </div>
-    </div>
+    </transition>
     <TaskModal v-if="showEditModal" :task="task" @close="closeEditModal" @updated="onUpdated" />
     <TaskDeleteModal v-if="showDeleteModal" :task="task" @close="closeDeleteModal" @deleted="onDeleted" />
   </div>
@@ -110,9 +114,9 @@ import { useTaskStore } from '@/stores/taskStore.ts'
 import { useRoute } from 'vue-router'
 import TaskModal from './TaskModal.vue'
 import TaskDeleteModal from './TaskDeleteModal.vue'
+import Progress from '@/components/ui/progress/Progress.vue'
 
-// props
-const { task } = defineProps<{ task: Task }>()
+const props = defineProps<{ task: Task }>();
 
 // modal state
 const showEditModal = ref(false)
@@ -132,9 +136,9 @@ const boardUsersLocal = ref<User[]>([])
 if (!isBoardView.value) {
   // Только для MyTasksPage: следим за task.boardId и подгружаем пользователей
   watch(
-    () => task.boardId,
+    () => props.task.boardId,
     async (id) => {
-      console.log('TaskCard [MyTasksPage] boardId changed', { id: task.id, boardId: id, name: task.name })
+      console.log('TaskCard [MyTasksPage] boardId changed', { id: props.task.id, boardId: id, name: props.task.name })
       if (!isNaN(id)) {
         await userStore.fetchUsersFromBoard(id)
         boardUsersLocal.value = userStore.boardUsers[id] || []
@@ -146,7 +150,7 @@ if (!isBoardView.value) {
 }
 
 // Fetch board users for assignment dropdown when task changes
-watch(() => task.boardId, (id) => {
+watch(() => props.task.boardId, (id) => {
   userStore.fetchUsersFromBoard(id)
 }, { immediate: true })
 
@@ -155,12 +159,12 @@ const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userSto
 
 // Получение списка пользователей для назначения
 const usersForAssignment = computed<User[]>(() => {
-  if (!isBoardView.value && !isNaN(task.boardId)) {
+  if (!isBoardView.value && !isNaN(props.task.boardId)) {
     // Только для MyTasksPage используем локальный список
     return boardUsersLocal.value
-  } else if (isBoardView.value && !isNaN(task.boardId)) {
+  } else if (isBoardView.value && !isNaN(props.task.boardId)) {
     // Для BoardPage используем глобальный store
-    return userStore.boardUsers[task.boardId] || []
+    return userStore.boardUsers[props.task.boardId] || []
   } else {
     return userStore.users
   }
@@ -172,7 +176,7 @@ const unassignedUsers = computed<User[]>(() => {
 })
 
 // Список пользователей, которым задача назначена
-const assignedUsers = computed<User[]>(() => task.assignees ?? [])
+const assignedUsers = computed<User[]>(() => props.task.assignees ?? [])
 
 const priorityLabel: Record<string, string> = {
   HIGH: 'Важно',
@@ -183,7 +187,7 @@ const priorityLabel: Record<string, string> = {
 const isDragging = ref(false)
 
 function onDragStart(e: DragEvent) {
-  e.dataTransfer?.setData('taskId', String(task.id));
+  e.dataTransfer?.setData('taskId', String(props.task.id));
   isDragging.value = true;
 }
 
@@ -205,13 +209,13 @@ async function assignToUser(user: User) {
   if (!isBoardView.value) {
     await userStore.fetchUsers() // всегда получаем актуальный список
   }
-  await taskStore.assignUser(task.id, user.id)
+  await taskStore.assignUser(props.task.id, user.id)
   await refreshTasks()
 }
 
 // отменить назначение указанного пользователя к задаче и обновить список
 async function unassignUser(user: User) {
-  await taskStore.unassignUser(task.id, user.id)
+  await taskStore.unassignUser(props.task.id, user.id)
   await refreshTasks()
 }
 
@@ -238,11 +242,28 @@ function closeDeleteModal() {
 }
 
 async function onDeleted() {
+  handleDelete()
   await refreshTasks()
 }
 
-const emit = defineEmits(['dragstart', 'updateTask', 'deleteTask'])
+const visible = ref(true)
+function handleDelete() {
+  visible.value = false
+  setTimeout(() => emit('deleteTask', props.task), 250)
+}
+
+const emit = defineEmits(['dragstart', 'updateTask', 'deleteTask', 'assignTask', 'assignToUser'])
 </script>
 
 <style scoped>
+.task-collapse-leave-active {
+  transition: opacity 0.2s, max-height 0.25s cubic-bezier(.22,1.12,.36,1), margin 0.25s, padding 0.25s;
+  overflow: hidden;
+}
+.task-collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+}
 </style>

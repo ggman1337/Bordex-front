@@ -7,6 +7,7 @@
           v-for="col in columns"
           :key="col.id"
           :column="col"
+          :board-id="boardId"
           @createTask="openNewTaskForm"
           @updateTask="onTaskUpdate"
           @deleteTask="openDeleteModal"

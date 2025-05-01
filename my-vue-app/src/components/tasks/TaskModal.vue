@@ -3,7 +3,7 @@
     <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
       <Card class="w-96 dark:bg-dark-700">
         <CardHeader>
-          <CardTitle class="dark:text-dark-100">Редактировать задачу</CardTitle>
+          <CardTitle class="dark:text-dark-100">{{ isEditMode ? 'Редактировать задачу' : 'Создать задачу' }}</CardTitle>
         </CardHeader>
         <CardContent>
           <div class="flex flex-col gap-4">
@@ -38,6 +38,16 @@
               </select>
             </label>
             <label>
+              <span class="text-sm font-semibold dark:text-dark-200">Прогресс (%)</span>
+              <input
+                type="number"
+                v-model.number="modalProgress"
+                min="0" max="100"
+                class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"
+                placeholder="0-100"
+              />
+            </label>
+            <label>
               <span class="text-sm font-semibold dark:text-dark-200">Дедлайн</span>
               <Popover>
                 <PopoverTrigger as-child>
@@ -66,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, watch } from 'vue'
+import { defineProps, defineEmits, ref, watch, computed } from 'vue'
 import Card from '@/components/ui/card/Card.vue'
 import CardHeader from '@/components/ui/card/CardHeader.vue'
 import CardTitle from '@/components/ui/card/CardTitle.vue'
@@ -83,35 +93,31 @@ import { useTaskStore } from '@/stores/taskStore'
 import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
 import { tagValues } from '@/components/boards/types.ts'
 
-const props = defineProps<{ task: BoardTask }>()
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'updated'): void
-}>()
+const props = defineProps<{ task?: BoardTask, boardId?: number }>()
+const emit = defineEmits(['close', 'updated'])
 
 const taskStore = useTaskStore()
 
-const modalTitle = ref(props.task.name)
-const modalDescription = ref(props.task.description ?? '')
-const modalStatus = ref(props.task.status)
-// ограниченная типизация приоритета
-type Priority = 'LOW' | 'MEDIUM' | 'HIGH'
-const modalPriority = ref<Priority>((props.task.priority as Priority) ?? 'LOW')
-const modalTag = ref<TagValue>(props.task.tag.value)
-// пếpредаем дату без явного типа, v-model сам определит
-const modalDeadline = ref(
-  props.task.deadline ? parseDate(props.task.deadline.slice(0, 10)) : undefined
-)
+const isEditMode = computed(() => !!props.task && !!props.task.id)
+const modalTitle = ref(props.task?.name ?? '')
+const modalDescription = ref(props.task?.description ?? '')
+const modalStatus = ref(props.task?.status ?? 'NEW')
+const modalPriority = ref((props.task?.priority as any) ?? 'LOW')
+const modalTag = ref<TagValue>(props.task?.tag?.value ?? tagValues[0])
+const modalDeadline = ref(props.task?.deadline ? parseDate(props.task.deadline.slice(0, 10)) : undefined)
+const modalProgress = ref(typeof props.task?.progress === 'number' ? props.task.progress : 0)
 
 watch(
   () => props.task,
   (t) => {
+    if (!t) return
     modalTitle.value = t.name
     modalDescription.value = t.description ?? ''
     modalStatus.value = t.status
-    modalPriority.value = (t.priority as Priority) ?? 'LOW'
+    modalPriority.value = (t.priority as any) ?? 'LOW'
     modalTag.value = t.tag.value
     modalDeadline.value = t.deadline ? parseDate(t.deadline.slice(0, 10)) : undefined
+    modalProgress.value = typeof t.progress === 'number' ? t.progress : 0
   }
 )
 
@@ -123,14 +129,28 @@ function closeModal() {
 
 async function submitModal() {
   const deadline = modalDeadline.value ? modalDeadline.value.toString() + 'T00:00:00' : undefined
-  await taskStore.updateTask(props.task.id, {
-    name: modalTitle.value,
-    description: modalDescription.value,
-    status: modalStatus.value,
-    priority: modalPriority.value,
-    tag: modalTag.value,
-    deadline,
-  })
+  if (isEditMode.value && props.task) {
+    await taskStore.updateTask(props.task.id, {
+      name: modalTitle.value,
+      description: modalDescription.value,
+      status: modalStatus.value,
+      priority: modalPriority.value,
+      tag: modalTag.value,
+      deadline,
+      progress: Math.max(0, Math.min(100, modalProgress.value)),
+    })
+  } else {
+    if (!props.boardId) throw new Error('boardId is required for creating a task')
+    await taskStore.createTask(props.boardId, {
+      name: modalTitle.value,
+      description: modalDescription.value,
+      status: modalStatus.value,
+      priority: modalPriority.value,
+      tag: modalTag.value,
+      deadline,
+      progress: Math.max(0, Math.min(100, modalProgress.value)),
+    })
+  }
   emit('updated')
   emit('close')
 }

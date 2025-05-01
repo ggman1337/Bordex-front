@@ -148,6 +148,7 @@ export interface Task {
   assignees?: User[];
   priority?: string;
   deadline?: string | null;
+  progress?: number; // 0..100, процент выполнения задачи
 }
 
 export interface BoardColumn {
