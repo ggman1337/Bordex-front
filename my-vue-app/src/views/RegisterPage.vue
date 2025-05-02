@@ -17,14 +17,16 @@
       <div class="register-main-text">
         <h1 class="register-title">Управляйте задачами<br />команды в одном месте</h1>
         <p class="register-desc text-foreground dark:text-muted-foreground">Bordex помогает командам перемещать работу вперёд.<br>Совместно работайте, управляйте задачами и достигайте новых пиков продуктивности.</p>
-        <img src="@/assets/register-mock.png" alt="Скриншот доски" v-if="routeInline === 'inline'" class="register-board-img enlarged" />
-        <img src="@/assets/register-mock-light.png" alt="Скриншот доски" v-else="routeInline === 'none'" class="register-board-img enlarged" />
+        <img src="@/assets/register-mock-light.png" alt="Скриншот доски" v-if="routeInline === 'inline'" class="register-board-img large-img" />
+        <img src="@/assets/register-mock.png" alt="Скриншот доски" v-else="routeInline === 'none'" class="register-board-img large-img" />
       </div>
       <div class="register-footer text-foreground dark:text-muted-foreground"> 2025 Bordex.</div>
     </div>
     <div class="register-right bg-white dark:bg-black">
       <div class="register-login-btn-wrap"><button class="register-login-btn border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600">Войти</button></div>
-      <RegistrationForm />
+      <div class="w-full flex justify-center">
+        <RegistrationForm class="w-full max-w-md" />
+      </div>
     </div>
   </div>
 </template>
@@ -74,6 +76,7 @@ import RegistrationForm from '@/components/auth/RegistrationForm.vue'
   flex-direction: column;
   justify-content: space-between;
   padding: 48px 40px 24px 56px;
+  position: relative;
 }
 .register-logo-row {
   display: flex;

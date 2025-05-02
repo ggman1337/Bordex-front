@@ -1,53 +1,16 @@
 <template>
-  <div>
+  <div >
     <Card v-if="!showFullForm" class="max-w-md w-full mx-auto bg-transparent">
       <CardHeader>
         <CardTitle class="text-xl font-bold mb-2">Создайте аккаунт</CardTitle>
       </CardHeader>
       <CardContent>
-        <form @submit.prevent="() => { console.log('Form submit event triggered'); onSubmit(); }" class="space-y-6">
-          <FormField v-slot="{ value, handleChange, meta }" name="email">
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input 
-                  type="email"
-                  placeholder="name@example.ru"
-                  :modelValue="value"
-                  @update:modelValue="(newValue) => {
-                    console.log('Email value updated:', newValue);
-                    handleChange(newValue);
-                  }"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-
-          <FormField v-slot="{ value, handleChange, meta }" name="terms">
-             <FormItem class="flex items-center space-x-2 pt-2">
-               <FormControl>
-                 <input
-                   type="checkbox"
-                   :checked="!!value"
-                   @change="(e) => {
-                     const isChecked = (e.target as HTMLInputElement)?.checked;
-                     console.log('Checkbox value:', isChecked);
-                     handleChange(isChecked ?? false);
-                   }"
-                   id="terms"
-                   class="accent-blue-600 w-4 h-4 rounded focus:ring-2 focus:ring-blue-600 focus:ring-offset-0 border-gray-300"
-                  />
-                </FormControl>
-               <FormLabel for="terms" class="text-sm font-medium leading-none !mt-0">
-                 Я принимаю <a href="#" class="underline">условия использования</a>
-               </FormLabel>
-               <FormMessage />
-             </FormItem>
-           </FormField>
-
-          <pre class="text-xs text-red-500">{{ initialFormErrors }}</pre>
-
+        <form @submit.prevent="onSubmit" class="space-y-6">
+          <div>
+            <label>Email</label>
+            <Input type="email" placeholder="name@example.ru" v-model="email" />
+            <p v-if="isSubmitted && !email" class="error-message">Обязательное поле</p>
+          </div>
           <Button type="submit" class="w-full main-btn">Продолжить</Button>
 
           <div class="flex items-center my-2">
@@ -66,72 +29,43 @@
     </Card>
 
     <div v-if="showFullForm">
-      <Card class="max-w-md w-full mx-auto bg-transparent mt-4">
+      <Card class="max-w-md w-full mx-auto bg-transparent mt-4 scale-75">
         <CardHeader>
           <CardTitle>Завершите регистрацию</CardTitle>
+          <Button type="button" @click="goBack" class="mt-2">Назад</Button>
         </CardHeader>
         <CardContent>
           <form @submit.prevent="onFullSubmit" class="space-y-4">
-            <FormField v-slot="{ componentField }" name="username">
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Введите username" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="firstName">
-              <FormItem>
-                <FormLabel>Имя</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Введите имя" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="lastName">
-              <FormItem>
-                <FormLabel>Фамилия</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Введите фамилию" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="email">
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="Email" disabled v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="password">
-              <FormItem>
-                <FormLabel>Пароль</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Введите пароль" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="passwordConfirm">
-              <FormItem>
-                <FormLabel>Подтвердите пароль</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Подтвердите пароль" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
+            <div>
+              <label>Username</label>
+              <Input type="text" placeholder="Введите username" v-model="username" />
+              <p v-if="isSubmitted && !username" class="error-message">Введите username</p>
+            </div>
+            <div>
+              <label>Имя</label>
+              <Input type="text" placeholder="Введите имя" v-model="firstName" />
+              <p v-if="isSubmitted && !firstName" class="error-message">Введите имя</p>
+            </div>
+            <div>
+              <label>Фамилия</label>
+              <Input type="text" placeholder="Введите фамилию" v-model="lastName" />
+              <p v-if="isSubmitted && !lastName" class="error-message">Введите фамилию</p>
+            </div>
+            <div>
+              <label>Email</label>
+              <Input type="email" placeholder="Email" disabled v-model="email" />
+              <p v-if="isSubmitted && (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))" class="error-message">Неверный email</p>
+            </div>
+            <div>
+              <label>Пароль</label>
+              <Input type="password" placeholder="Введите пароль" v-model="password" />
+              <p v-if="isSubmitted && password.length < 6" class="error-message">Пароль должен быть не менее 6 символов</p>
+            </div>
+            <div>
+              <label>Подтвердите пароль</label>
+              <Input type="password" placeholder="Подтвердите пароль" v-model="passwordConfirm" />
+              <p v-if="isSubmitted && password !== passwordConfirm" class="error-message">Пароли не совпадают</p>
+            </div>
             <Button type="submit" class="w-full main-btn mt-6">Зарегистрироваться</Button>
           </form>
         </CardContent>
@@ -142,22 +76,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import * as z from 'zod'
-import { toast } from 'vue-sonner' // Assuming you use vue-sonner for toasts
-
-// Import Shadcn/Vue components
+import { ref, nextTick } from 'vue'
+import { toast } from 'vue-sonner'
 import Button from '@/components/ui/button/Button.vue'
-import {
-  FormControl,
-  // FormDescription, // Not used currently
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
 import Input from '@/components/ui/input/Input.vue'
 import Card from '@/components/ui/card/Card.vue'
 import CardHeader from '@/components/ui/card/CardHeader.vue'
@@ -165,114 +86,118 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 
-// --- Initial Form Logic ---
+// --- Reactive Form State ---
 
-const initialFormSchema = toTypedSchema(z.object({
-  email: z.string().min(1),
-  terms: z.boolean().refine(val => val, 'Требуется согласие')
-}));
-
-// Use useForm for the initial form
-const { 
-  handleSubmit: handleInitialSubmit, 
-  errors: initialFormErrors,
-  values: formValues
-} = useForm({
-  validationSchema: initialFormSchema,
-  initialValues: { email: '', terms: false },
-});
-
-watch(initialFormErrors, (errors) => {
-  console.log('Validation errors:', errors);
-}, { deep: true });
-
-watch(formValues, (newVal) => {
-  console.log('Current form state:', {
-    email: newVal.email,
-    terms: newVal.terms,
-    isValid: !initialFormErrors.value.email && !initialFormErrors.value.terms
-  });
-}, { deep: true });
-
-// --- Full Form Logic ---
+const email = ref('');
+const terms = ref(false);
+const username = ref('');
+const firstName = ref('');
+const lastName = ref('');
+const password = ref('');
+const passwordConfirm = ref('');
+const isSubmitted = ref(false);
 
 const showFullForm = ref(false);
 
-// Schema for the full registration form, including password confirmation
-const fullFormSchema = toTypedSchema(
-  z.object({
-    username: z.string().min(1, 'Введите username'),
-    firstName: z.string().min(1, 'Введите имя'),
-    lastName: z.string().min(1, 'Введите фамилию'),
-    email: z.string().email('Неверный email'), // Should be pre-filled and validated
-    password: z.string().min(6, 'Пароль должен быть не менее 6 символов'),
-    passwordConfirm: z.string().min(1, 'Подтвердите пароль'),
-  })
-  // Add refinement to check if passwords match
-  .refine(data => data.password === data.passwordConfirm, {
-    message: "Пароли не совпадают",
-    path: ["passwordConfirm"], // Show error message on the confirmation field
-  })
-);
+// --- Validation Logic ---
 
-// Use a SEPARATE useForm instance for the full form
-const { handleSubmit: handleFullSubmit, setFieldValue: setFullFormFieldValue, values: fullFormValues } = useForm({
-  validationSchema: fullFormSchema,
-  // Initial values for the second form (email will be set later)
-  initialValues: {
+const validateInitialForm = () => {
+  const errors = {
+    email: '',
+  };
+
+  if (!email.value) {
+    errors.email = 'Обязательное поле';
+  }
+
+  return errors;
+};
+
+const validateFullForm = () => {
+  const errors = {
     username: '',
     firstName: '',
     lastName: '',
-    email: '', // Placeholder, will be updated
+    email: '',
     password: '',
     passwordConfirm: '',
-  },
-});
+  };
+
+  if (!username.value) {
+    errors.username = 'Введите username';
+  }
+
+  if (!firstName.value) {
+    errors.firstName = 'Введите имя';
+  }
+
+  if (!lastName.value) {
+    errors.lastName = 'Введите фамилию';
+  }
+
+  if (!email.value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value)) {
+    errors.email = 'Неверный email';
+  }
+
+  if (password.value.length < 6) {
+    errors.password = 'Пароль должен быть не менее 6 символов';
+  }
+
+  if (password.value !== passwordConfirm.value) {
+    errors.passwordConfirm = 'Пароли не совпадают';
+  }
+
+  return errors;
+};
 
 // --- Submission Handlers ---
 
-// Handler for the initial form submission
-const onSubmit = handleInitialSubmit(async (values) => {
-  console.log('Validation passed! Form values:', values);
-  // Here you might typically verify the email, e.g., send a code
-
-  // Set the email value in the *second* form's state using setFieldValue
-  setFullFormFieldValue('email', values.email);
-
-  // Show the full registration form
+const onSubmit = () => {
+  const errors = validateInitialForm();
+  if (errors.email) {
+    return;
+  }
   showFullForm.value = true;
+  toast.success('Пожалуйста, завершите регистрацию.');
+};
 
-  toast.success('Пожалуйста, завершите регистрацию.'); // Optional feedback
-});
-
-// Handler for the full form submission
-const onFullSubmit = handleFullSubmit(async (values) => {
-  // values here are from the *second* form's state, managed by its useForm instance
-  console.log('Full registration submitted:', values);
-
-  // --- IMPORTANT ---
-  // Password matching is already handled by the Zod schema's .refine()
-  // No need for an explicit check here unless you want additional logic.
-
+const onFullSubmit = () => {
+  console.log('onFullSubmit вызвана');  // Лог для проверки вызова функции
+  isSubmitted.value = true;
+  nextTick(() => {
+    isSubmitted.value = true;
+  });
+  const errors = validateFullForm();
+  if (Object.values(errors).some(error => error)) {
+    return;
+  }
   try {
     // --- Placeholder for your actual registration API call ---
     // const response = await api.registerUser(values);
-    // console.log('Registration successful:', response);
     toast.success('Аккаунт успешно создан!');
     // Redirect user or update UI state
     // e.g., router.push('/dashboard');
     // --- End Placeholder ---
-
   } catch (error) {
-    console.error('Registration failed:', error);
-    toast.error('Ошибка регистрации. Пожалуйста, попробуйте снова.');
-    // Handle specific API errors here if needed
+    if (error instanceof Error) {
+      toast.error(`Ошибка регистрации: ${error.message}. Пожалуйста, попробуйте снова.`);
+    } else {
+      toast.error('Ошибка регистрации. Пожалуйста, попробуйте снова.');
+    }
   }
-});
+};
 
+const goBack = () => {
+  showFullForm.value = false;
+  terms.value = false;
+};
 </script>
 
 <style scoped>
+.error-message {
+  color: red;
+  font-size: 0.875rem;
+}
 /* Add styles from your original example */
 input[type="checkbox"] {
   /* Ensure consistent sizing and appearance */
@@ -343,5 +268,19 @@ input[type="checkbox"]:focus {
      padding-right: 1rem;
    }
 
+}
+
+.max-w-md {
+  width: 500px;  /* Сохраняем ширину */
+  overflow-y: auto; /* Оставляем на случай переполнения */
+}
+
+.vue-sonner-toast {
+  z-index: 9999; /* Убедитесь, что уведомления отображаются поверх других элементов */
+  background-color: rgba(0, 0, 0, 0.8); /* Сделайте фон более заметным */
+  color: white; /* Убедитесь, что текст читаем */
+  position: fixed;
+  top: 10px; /* Измените позицию, чтобы уведомления были видны */
+  right: 10px;
 }
 </style>

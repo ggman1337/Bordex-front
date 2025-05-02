@@ -160,9 +160,15 @@ export interface BoardColumn {
 export interface Board {
   id: number;
   title: string;
-  description?: string;
-  scope?: string;
-  owner?: any;
+  description: string;
+  scope: string; // e.g., 'PRIVATE', 'PUBLIC'
+  owner: {
+    id: number;
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   membersCount: number;
   tasksCount: number;
 }

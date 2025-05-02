@@ -4,7 +4,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
       <BoardCard v-for="board in boards" :key="board.id" :board="board" @updateBoard="openEditBoardModal" />
       <!-- Кнопка создать новую доску -->
-      <div @click="openBoardModal" class="flex items-center justify-center bg-card text-card-foreground rounded-xl shadow p-5 min-w-[260px] cursor-pointer border-2 border-dashed border-border transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-primary hover:shadow-lg">
+      <div @click="openBoardModal" class="flex items-center justify-center bg-card text-card-foreground rounded-xl shadow p-5 min-w-[10rem] max-w-[20rem] cursor-pointer border-2 border-dashed border-border transition hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-primary hover:shadow-lg">
         <button class="flex flex-col items-center text-primary hover:text-primary dark:hover:text-white">
           <span class="text-4xl mb-2">+</span>
           <span class="text-base ">Создать новую доску</span>
