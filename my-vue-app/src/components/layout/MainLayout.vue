@@ -7,9 +7,9 @@ import Topbar from "@/components/layout/Topbar.vue";
 <template>
   <SidebarProvider>
     <AppSidebar />
-    <div class="flex flex-col flex-1 overflow-hidden bg-background text-foreground">
+    <div class="flex flex-col flex-1 overflow-auto bg-background text-foreground">
       <Topbar />
-      <main class="flex-1 overflow-hidden p-6">
+      <main class="flex-1 overflow-auto p-6">
         <slot />
       </main>
     </div>

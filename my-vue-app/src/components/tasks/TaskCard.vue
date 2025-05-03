@@ -12,14 +12,14 @@
         v-bind="$attrs"
       >
         <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-col items-start gap-1 min-w-0">
             <span
               class="text-xs font-semibold px-2 py-1 rounded-full text-white"
               :style="{ backgroundColor: task.tag.color }"
             >{{ task.tag.label }}</span>
             <span
               v-if="task.deadline"
-              :class="['ml-2 text-xs px-1 py-1 rounded border border-border flex items-center gap-1', deadlineBadgeClass(task.deadline)]"
+              :class="['deadline-badge', 'text-xs px-1 py-1 rounded border border-border flex items-center gap-1 mt-0.3', deadlineBadgeClass(task.deadline)]"
               :title="formatDeadline(task.deadline)"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline align-middle"><g id="Calendar Event"><path id="Vector" d="M10.6667 2V4.66667M5.33335 2V4.66667M2.66669 7.33333H13.3334M4.00002 3.33333H12C12.7364 3.33333 13.3334 3.93029 13.3334 4.66667V12.6667C13.3334 13.403 12.7364 14 12 14H4.00002C3.26364 14 2.66669 13.403 2.66669 12.6667V4.66667C2.66669 3.93029 3.26364 3.33333 4.00002 3.33333ZM5.33335 10H6.66669V11.3333H5.33335V10Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
@@ -28,7 +28,7 @@
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button class="text-muted-foreground hover:text-foreground text-xl"><span>...</span></button>
+              <button class="text-muted-foreground hover:text-foreground text-xl mb-6"><span>...</span></button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-32">
               <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
@@ -292,6 +292,17 @@ const emit = defineEmits(['dragstart', 'updateTask', 'deleteTask', 'assignTask',
 </script>
 
 <style scoped>
+.deadline-badge {
+  max-width: 120px;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: center;
+  line-height: 1.1;
+}
 .task-collapse-leave-active {
   transition: opacity 0.2s, max-height 0.25s cubic-bezier(.22,1.12,.36,1), margin 0.25s, padding 0.25s;
   overflow: hidden;

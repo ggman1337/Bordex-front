@@ -87,6 +87,7 @@ let connectedBoardIds: number[] = []
 
 function connectAllBoards() {
   // disconnectAllBoards()
+  console.log('[WebSocket] Подписка на доски пользователя 1 (userId=1)')
   boardStore.connectUserBoardRealtime(1)
 }
 function disconnectAllBoards() {
