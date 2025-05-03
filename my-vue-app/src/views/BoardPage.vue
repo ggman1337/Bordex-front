@@ -11,7 +11,6 @@
           @createTask="openNewTaskForm"
           @updateTask="onTaskUpdate"
           @deleteTask="openDeleteModal"
-          @assignTask="assignCurrentUser"
           @assignToUser="assignToUser"
         />
       </div>
@@ -230,12 +229,6 @@ async function onDeleted() {
 // Handle TaskModal updated event
 async function onModalUpdated() {
   closeTaskModal()
-  await taskStore.fetchTasks(boardId.value)
-}
-
-// assign current user to task and refresh task list
-async function assignCurrentUser(task: BoardTask) {
-  await taskStore.assignUser(task.id, userStore.id)
   await taskStore.fetchTasks(boardId.value)
 }
 

@@ -5,7 +5,7 @@
         <AvatarFallback>{{ initials }}</AvatarFallback>
       </Avatar>
     </DropdownMenuTrigger>
-    <DropdownMenuContent class="profile-menu-content right-0 left-auto origin-top-right">
+    <DropdownMenuContent class="profile-menu-content right-0 left-auto origin-top-right scale-90">
       <div class="flex flex-col items-center justify-center text-center w-full h-36 border-b">
         <Avatar class="user-avatar mb-2" style="width:48px;height:48px;">
           <AvatarFallback>{{ initials }}</AvatarFallback>
@@ -15,7 +15,7 @@
           <div class="text-muted-foreground text-base -mt-1">{{ user?.email }}</div>
         </div>
       </div>
-      <DropdownMenuItem class="profile-menu-item">
+      <DropdownMenuItem class="profile-menu-item" @click="goToBoards">
         <span class="icon" v-html="icons.IconBoards" />
         Мои доски
       </DropdownMenuItem>
@@ -37,9 +37,14 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { useUserStore } from '@/stores/userStore.ts'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import * as icons from './ProfileMenuIcons'
 
+const router = useRouter()
 const store = useUserStore()
+function goToBoards() {
+  router.push('/boards')
+}
 const user = computed(() => store.getUserById(store.id))
 const initials = computed(() => {
   if (user.value) {

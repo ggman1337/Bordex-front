@@ -23,7 +23,7 @@
       <div class="register-footer text-foreground dark:text-muted-foreground"> 2025 Bordex.</div>
     </div>
     <div class="register-right bg-white dark:bg-black">
-      <div class="register-login-btn-wrap"><button class="register-login-btn border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600">Войти</button></div>
+      <div class="register-login-btn-wrap"><button class="register-login-btn border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600" @click="goToLogin">Войти</button></div>
       <div class="w-full flex justify-center">
         <RegistrationForm class="w-full max-w-md" />
       </div>
@@ -33,10 +33,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 // Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
 let observer: MutationObserver | null = null
+
+const router = useRouter()
+function goToLogin() {
+  router.push('/login')
+}
 
 function updateRouteColor() {
   routeColor.value = document.documentElement.classList.contains('dark') ? '#fff' : '#000'

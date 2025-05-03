@@ -12,10 +12,20 @@
         v-bind="$attrs"
       >
         <div class="flex items-center justify-between mb-1">
-          <span
-            class="text-xs font-semibold px-2 py-1 rounded-full text-white"
-            :style="{ backgroundColor: task.tag.color }"
-          >{{ task.tag.label }}</span>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-xs font-semibold px-2 py-1 rounded-full text-white"
+              :style="{ backgroundColor: task.tag.color }"
+            >{{ task.tag.label }}</span>
+            <span
+              v-if="task.deadline"
+              :class="['ml-2 text-xs px-1 py-1 rounded border border-border flex items-center gap-1', deadlineBadgeClass(task.deadline)]"
+              :title="formatDeadline(task.deadline)"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline align-middle"><g id="Calendar Event"><path id="Vector" d="M10.6667 2V4.66667M5.33335 2V4.66667M2.66669 7.33333H13.3334M4.00002 3.33333H12C12.7364 3.33333 13.3334 3.93029 13.3334 4.66667V12.6667C13.3334 13.403 12.7364 14 12 14H4.00002C3.26364 14 2.66669 13.403 2.66669 12.6667V4.66667C2.66669 3.93029 3.26364 3.33333 4.00002 3.33333ZM5.33335 10H6.66669V11.3333H5.33335V10Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
+              {{ formatDeadline(task.deadline) }}
+            </span>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button class="text-muted-foreground hover:text-foreground text-xl"><span>...</span></button>
@@ -96,6 +106,8 @@
 </template>
 
 <script setup lang="ts">
+import { format } from 'date-fns'
+
 import type { Task } from '../boards/types.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 import type { User } from '@/stores/userStore.ts'
@@ -117,6 +129,30 @@ import TaskDeleteModal from './TaskDeleteModal.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
 
 const props = defineProps<{ task: Task }>();
+
+function formatDeadline(deadline: string | null | undefined): string {
+  if (!deadline) return ''
+  // ISO or YYYY-MM-DD or date string
+  const date = new Date(deadline)
+  if (isNaN(date.getTime())) return deadline
+  return format(date, 'dd.MM.yyyy')
+}
+
+function deadlineBadgeClass(deadline: string | null | undefined): string {
+  if (!deadline) return ''
+  const d = new Date(deadline)
+  if (isNaN(d.getTime())) return ''
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  d.setHours(0,0,0,0)
+  if (d < today) {
+    return 'bg-[#ffe5e5] text-[#e23b3b] border-[#ffd6d6] dark:bg-[#2a0000] dark:text-[#ff8cc3] dark:border-[#ff8cc3]'
+  } else if (d.getTime() === today.getTime()) {
+    return 'bg-[#fffbe6] text-[#bfa900] border-[#ffe066] dark:bg-[#2d2a00] dark:text-[#ffe066] dark:border-[#ffe066]'
+  } else {
+    return 'bg-[#e6fff2] text-[#13c07c] border-[#bdf5d7] dark:bg-[#00331d] dark:text-[#13c07c] dark:border-[#13c07c]'
+  }
+}
 
 // modal state
 const showEditModal = ref(false)

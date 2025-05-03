@@ -31,6 +31,7 @@
 import TaskCard from '../tasks/TaskCard.vue'
 import TaskModal from '../tasks/TaskModal.vue'
 import type { BoardColumn, Task } from './types.ts'
+import type { User } from '@/stores/userStore'
 import { ref } from 'vue'
 
 const props = defineProps<{ column: BoardColumn, boardId: number }>()
@@ -39,7 +40,7 @@ const emit = defineEmits<{
   (e: 'updateTask', task: Task | { id: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }): void
   (e: 'deleteTask', task: Task): void
   (e: 'assignTask', userId: number): void
-  (e: 'assignToUser', taskId: number, userId: number): void
+  (e: 'assignToUser', task: Task, user: User): void
 }>()
 
 const showCreateModal = ref(false)

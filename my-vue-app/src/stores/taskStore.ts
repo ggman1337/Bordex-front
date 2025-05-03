@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import SockJS from 'sockjs-client'
-import Stomp from 'webstomp-client'
 import { websocketConfig } from '@/config/websocket.config'
+import { subscribe, unsubscribe } from '@/lib/websocket'
 import type { Task as BoardTask, BoardColumn } from '@/components/boards/types'
 import { useUserStore } from '@/stores/userStore'
 
@@ -13,8 +12,6 @@ const baseUrl = websocketConfig.serverUrl
 export const useTaskStore = defineStore('task', () => {
   const columns = ref<BoardColumn[]>([])
   const userTasks = ref<BoardTask[]>([])
-  let stompClient: any
-  let stompUserClient: any = null
   const userStore = useUserStore()
 
   // Преобразовать сырой объект задачи в формат Task для TaskCard.vue
@@ -53,25 +50,23 @@ export const useTaskStore = defineStore('task', () => {
     userTasks.value = raw.map(mapTask)
   }
 
-  function connect(boardId: number) {
-    const socket = new SockJS(`${baseUrl}/ws`)
-    stompClient = Stomp.over(socket)
-    stompClient.connect({}, () => {
-      stompClient.subscribe(`/topic/board/${boardId}/tasks`, onTaskUpdate)
-      // удаление задач через STOMP
-      stompClient.subscribe(`/topic/board/${boardId}/tasks/delete`, (payload: any) => {
-        const raw = JSON.parse(payload.body)
-        const task = mapTask(raw)
-        columns.value.forEach(col => {
-          col.tasks = col.tasks.filter(t => t.id !== task.id)
-        })
+  async function connect(boardId: number) {
+    await subscribe(`/topic/board/${boardId}/tasks`, onTaskUpdate)
+    await subscribe(`/topic/board/${boardId}/tasks/delete`, (payload: any) => {
+      const raw = JSON.parse(payload.body)
+      const task = mapTask(raw)
+      columns.value.forEach(col => {
+        col.tasks = col.tasks.filter(t => t.id !== task.id)
       })
-      fetchTasks(boardId)
     })
+    fetchTasks(boardId)
   }
 
-  function disconnect() {
-    if (stompClient) stompClient.disconnect()
+  function disconnect(boardId?: number) {
+    if (boardId) {
+      unsubscribe(`/topic/board/${boardId}/tasks`)
+      unsubscribe(`/topic/board/${boardId}/tasks/delete`)
+    }
   }
 
   function onTaskUpdate(payload: any) {
@@ -153,19 +148,16 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   // --- Вебсокет для MyTasksPage ---
-  function connectUserTasks(userId: number) {
-    if (stompUserClient) stompUserClient.disconnect()
-    const socket = new SockJS(`${baseUrl}/ws`)
-    stompUserClient = Stomp.over(socket)
-    stompUserClient.connect({}, () => {
-      stompUserClient.subscribe(`/topic/users/${userId}/tasks`, onUserTaskUpdate)
-      stompUserClient.subscribe(`/topic/users/${userId}/tasks/delete`, onUserTaskDelete)
-    })
+  async function connectUserTasks(userId: number) {
+    await subscribe(`/topic/users/${userId}/tasks`, onUserTaskUpdate)
+    await subscribe(`/topic/users/${userId}/tasks/delete`, onUserTaskDelete)
   }
 
-  function disconnectUserTasks() {
-    if (stompUserClient) stompUserClient.disconnect()
-    stompUserClient = null
+  function disconnectUserTasks(userId?: number) {
+    if (userId) {
+      unsubscribe(`/topic/users/${userId}/tasks`)
+      unsubscribe(`/topic/users/${userId}/tasks/delete`)
+    }
   }
 
   function onUserTaskUpdate(payload: any) {

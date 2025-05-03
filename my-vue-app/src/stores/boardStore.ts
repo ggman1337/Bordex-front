@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { websocketConfig } from '@/config/websocket.config'
 import type { Board } from '@/components/boards/types'
+import { subscribe, unsubscribe } from '@/lib/websocket'
 
 // Derive REST base URL from websocket config
 const baseUrl = websocketConfig.serverUrl.replace(/\/ws$/, '')
@@ -26,6 +27,97 @@ export const useBoardStore = defineStore('board', {
     hasError: (state) => !!state.error,
   },
   actions: {
+    // Подписка на обновление и удаление доски (глобальная, для совместимости)
+    async connectBoardRealtime(boardId: number) {
+      await subscribe(`/topic/board/${boardId}`, this.onBoardUpdate.bind(this))
+      await subscribe(`/topic/board/${boardId}/delete`, this.onBoardDelete.bind(this))
+    },
+    disconnectBoardRealtime(boardId: number) {
+      unsubscribe(`/topic/board/${boardId}`)
+      unsubscribe(`/topic/board/${boardId}/delete`)
+    },
+
+    // --- Индивидуальные realtime-топики для пользователя ---
+    async connectUserBoardRealtime(userId: number) {
+      await subscribe(`/topic/user/${userId}/board`, this.onUserBoardUpdate.bind(this))
+      await subscribe(`/topic/user/${userId}/board/delete`, this.onUserBoardDelete.bind(this))
+    },
+    disconnectUserBoardRealtime(userId: number) {
+      unsubscribe(`/topic/user/${userId}/board`)
+      unsubscribe(`/topic/user/${userId}/board/delete`)
+    },
+    // Обработчик обновления доски через user topic
+    onUserBoardUpdate(msg: any) {
+      // Логика идентична onBoardUpdate
+      const updated = JSON.parse(msg.body)
+      const idx = this.boards.findIndex((b: any) => b.id === updated.id)
+      if (idx !== -1) {
+        this.boards[idx] = {
+          ...this.boards[idx],
+          title: updated.title || updated.name,
+          description: updated.description,
+          scope: updated.scope,
+          owner: updated.owner,
+          membersCount: updated.membersCount ?? this.boards[idx].membersCount,
+          tasksCount: updated.tasksCount ?? this.boards[idx].tasksCount,
+        }
+      } else {
+        this.boards.push({
+          id: updated.id,
+          title: updated.title || updated.name,
+          description: updated.description,
+          scope: updated.scope,
+          owner: updated.owner,
+          membersCount: updated.membersCount ?? 0,
+          tasksCount: updated.tasksCount ?? 0,
+        })
+      }
+    },
+    // Обработчик удаления доски через user topic
+    onUserBoardDelete(msg: any) {
+      const deleted = JSON.parse(msg.body)
+      this.boards = this.boards.filter((b: any) => b.id !== deleted.id)
+      if (this.currentBoardId === deleted.id) {
+        this.currentBoardId = null
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('currentBoardId')
+      }
+    },
+    // Обработчик обновления доски
+    onBoardUpdate(msg: any) {
+      const updated = JSON.parse(msg.body)
+      const idx = this.boards.findIndex((b: any) => b.id === updated.id)
+      if (idx !== -1) {
+        this.boards[idx] = {
+          ...this.boards[idx],
+          title: updated.title || updated.name,
+          description: updated.description,
+          scope: updated.scope,
+          owner: updated.owner,
+          membersCount: updated.membersCount ?? this.boards[idx].membersCount,
+          tasksCount: updated.tasksCount ?? this.boards[idx].tasksCount,
+        }
+      } else {
+        // Новая доска — пушим в список
+        this.boards.push({
+          id: updated.id,
+          title: updated.title || updated.name,
+          description: updated.description,
+          scope: updated.scope,
+          owner: updated.owner,
+          membersCount: updated.membersCount ?? 0,
+          tasksCount: updated.tasksCount ?? 0,
+        })
+      }
+    },
+    // Обработчик удаления доски
+    onBoardDelete(msg: any) {
+      const deleted = JSON.parse(msg.body)
+      this.boards = this.boards.filter((b: any) => b.id !== deleted.id)
+      if (this.currentBoardId === deleted.id) {
+        this.currentBoardId = null
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('currentBoardId')
+      }
+    },
     // Установить текущую доску и сохранить в localStorage
     setCurrentBoard(id: number) {
       this.currentBoardId = id

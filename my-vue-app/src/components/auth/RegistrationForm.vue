@@ -77,6 +77,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
@@ -87,6 +88,7 @@ import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 
 // --- Reactive Form State ---
+const router = useRouter();
 
 const email = ref('');
 const terms = ref(false);
@@ -158,11 +160,10 @@ const onSubmit = () => {
     return;
   }
   showFullForm.value = true;
-  toast.success('Пожалуйста, завершите регистрацию.');
+  toast('Пожалуйста, завершите регистрацию.');
 };
 
-const onFullSubmit = () => {
-  console.log('onFullSubmit вызвана');  // Лог для проверки вызова функции
+const onFullSubmit = async () => {
   isSubmitted.value = true;
   nextTick(() => {
     isSubmitted.value = true;
@@ -172,17 +173,43 @@ const onFullSubmit = () => {
     return;
   }
   try {
-    // --- Placeholder for your actual registration API call ---
-    // const response = await api.registerUser(values);
-    toast.success('Аккаунт успешно создан!');
-    // Redirect user or update UI state
-    // e.g., router.push('/dashboard');
-    // --- End Placeholder ---
+    const response = await fetch('http://localhost:8080/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: username.value,
+        firstName: firstName.value,
+        lastName: lastName.value,
+        password: password.value,
+        email: email.value,
+        passwordConfirm: passwordConfirm.value
+      })
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = errorData.message || errorData.error || response.statusText || 'Ошибка регистрации';
+      toast(`Ошибка регистрации`, {
+        description: errorMsg,
+      });
+      return;
+    }
+    toast('Аккаунт успешно создан!', {
+      description: 'Теперь вы можете войти в систему.',
+      action: {
+        label: 'Войти',
+        onClick: () => router.push('/login'),
+      },
+    });
+    // Можно добавить редирект или очистку формы
   } catch (error) {
     if (error instanceof Error) {
-      toast.error(`Ошибка регистрации: ${error.message}. Пожалуйста, попробуйте снова.`);
+      toast('Ошибка регистрации', {
+        description: error.message + '. Пожалуйста, попробуйте снова.',
+      });
     } else {
-      toast.error('Ошибка регистрации. Пожалуйста, попробуйте снова.');
+      toast('Ошибка регистрации', {
+        description: 'Пожалуйста, попробуйте снова.',
+      });
     }
   }
 };

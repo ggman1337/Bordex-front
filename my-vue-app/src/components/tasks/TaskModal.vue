@@ -1,7 +1,7 @@
 <template>
   <teleport to="body">
     <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-      <Card class="w-96 dark:bg-dark-700">
+      <Card class="w-96 dark:bg-dark-700 scale-90">
         <CardHeader>
           <CardTitle class="dark:text-dark-100">{{ isEditMode ? 'Редактировать задачу' : 'Создать задачу' }}</CardTitle>
         </CardHeader>
@@ -9,7 +9,8 @@
           <div class="flex flex-col gap-4">
             <label>
               <span class="text-sm font-semibold dark:text-dark-200">Название</span>
-              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
+              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :class="{'border-red-500': showTitleError}" />
+              <span v-if="showTitleError" class="text-xs text-red-500">Название задачи обязательно</span>
             </label>
             <label>
               <span class="text-sm font-semibold dark:text-dark-200">Описание</span>
@@ -67,8 +68,8 @@
           </div>
         </CardContent>
         <CardFooter class="flex justify-end gap-2">
-          <CardAction><button @click="closeModal" class="px-4 py-2 dark:text-dark-200">Отмена</button></CardAction>
-          <CardAction><button @click="submitModal" class="px-4 py-2 bg-blue-600 text-white rounded dark:bg-blue-500 dark:hover:bg-blue-600">Сохранить</button></CardAction>
+          <CardAction><button @click="closeModal" class="px-4 py-2 text-muted-foreground hover:text-foreground">Отмена</button>
+            <button @click="submitModal" :disabled="!modalTitle.trim()" :class="['px-4 py-2 rounded', !modalTitle.trim() ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-primary-foreground hover:bg-primary/90']">{{ isEditMode ? 'Сохранить' : 'Создать' }}</button></CardAction>
         </CardFooter>
       </Card>
     </div>
@@ -127,7 +128,13 @@ function closeModal() {
   emit('close')
 }
 
+const showTitleError = ref(false)
+
 async function submitModal() {
+  showTitleError.value = !modalTitle.value.trim()
+  if (!modalTitle.value.trim()) {
+    return
+  }
   const deadline = modalDeadline.value ? modalDeadline.value.toString() + 'T00:00:00' : undefined
   if (isEditMode.value && props.task) {
     await taskStore.updateTask(props.task.id, {

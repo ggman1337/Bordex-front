@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { websocketConfig } from '@/config/websocket.config'
+import { connectWebSocket, disconnectWebSocket } from '@/lib/websocket'
 
 // derive REST base URL from WS config
 const baseUrl = websocketConfig.serverUrl.replace(/\/ws$/, '')
@@ -50,6 +51,8 @@ export const useUserStore = defineStore('user', {
       } catch (e) {
         console.error('Failed to fetch current user', e)
       }
+      // Подключаем WebSocket после успешного получения пользователя
+      connectWebSocket()
     },
     async fetchUsers() {
       try {
@@ -87,6 +90,16 @@ export const useUserStore = defineStore('user', {
       } catch (e) {
         console.error('Failed to fetch users', e)
       }
+    },
+    logout() {
+      // Очистить данные пользователя
+      this.id = 0
+      this.username = ''
+      this.firstName = ''
+      this.lastName = ''
+      this.email = ''
+      // Отключить WebSocket
+      disconnectWebSocket()
     }
   }
 })

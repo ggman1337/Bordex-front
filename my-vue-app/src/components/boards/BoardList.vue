@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue'
+import { ref, toRef, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useBoardStore } from '@/stores/boardStore'
 import BoardCard from '@/components/boards/BoardCard.vue'
 import type { Board as BoardType } from '@/components/boards/types'
@@ -81,6 +81,28 @@ import CardAction from '@/components/ui/card/CardAction.vue'
 const props = defineProps<{ boards: BoardType[] }>()
 const boards = toRef(props, 'boards')
 const boardStore = useBoardStore()
+
+// --- Вебсокет-подписка на все доски ---
+let connectedBoardIds: number[] = []
+
+function connectAllBoards() {
+  // disconnectAllBoards()
+  boardStore.connectUserBoardRealtime(1)
+}
+function disconnectAllBoards() {
+  boardStore.disconnectUserBoardRealtime(1)
+  connectedBoardIds = []
+}
+
+onMounted(() => {
+  connectAllBoards()
+})
+onBeforeUnmount(() => {
+  disconnectAllBoards()
+})
+watch(boards, () => {
+  connectAllBoards()
+}, { deep: true })
 
 // Модальное окно создания доски
 const showBoardModal = ref(false)
