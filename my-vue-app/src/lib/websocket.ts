@@ -17,7 +17,7 @@ export function connectWebSocket(token?: string): Promise<void> {
   connectPromise = new Promise((resolve, reject) => {
     const socket = new SockJS(url)
     stompClient = Stomp.over(socket)
-    stompClient.connect({}, () => {
+    stompClient.connect({ 'accept-version': '1.2' }, () => {
       isConnected = true
       connectPromise = null
       console.log('[WebSocket] STOMP Connected')

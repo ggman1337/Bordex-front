@@ -1,6 +1,6 @@
 <template>
   <div class="relative inline-block">
-    <Avatar class="notification-bell text-foreground w-8 h-8 flex items-center justify-center" @click="toggleMenu">
+    <Avatar class="notification-bell text-foreground w-8 h-8 flex items-center justify-center" @click.stop="toggleMenu">
       <svg class="w-5 h-5 text-foreground" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
         <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" />
         <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" />
@@ -121,8 +121,14 @@ async function fetchNotifications() {
 }
 
 function toggleMenu() {
-  showMenu.value = !showMenu.value
-  if (showMenu.value && !loadedOnce) {
+  // Скрываем меню, если оно уже открыто, иначе открываем
+  if (showMenu.value) {
+    showMenu.value = false
+    return
+  }
+  showMenu.value = true
+  // Загружаем уведомления только при первом открытии
+  if (!loadedOnce) {
     fetchNotifications()
     loadedOnce = true
   }
@@ -149,11 +155,16 @@ function formatTime(dateStr: string) {
 const userStore = useUserStore()
 const topic = `/topic/notification/user/${userStore.id}`
 
+console.log('[NotificationBell] userStore.id:', userStore.id)
+console.log('[NotificationBell] Подписка на топик:', topic)
+
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
   subscribe(topic, (msg: any) => {
+    console.log('[NotificationBell] Получено сообщение по WebSocket:', msg)
     try {
       const notif = JSON.parse(msg.body)
+      console.log('[NotificationBell] Парсинг уведомления:', notif)
       notifications.value.unshift({
         id: notif.id,
         title: notif.title || 'Уведомление',
@@ -162,7 +173,7 @@ onMounted(() => {
         eventType: notif.eventType || ''
       })
     } catch (e) {
-      // ignore parse errors
+      console.error('[NotificationBell] Ошибка парсинга уведомления:', e)
     }
   })
 })
