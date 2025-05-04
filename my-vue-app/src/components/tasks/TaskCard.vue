@@ -33,7 +33,7 @@
             <DropdownMenuContent class="w-32">
               <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuSub>
+              <DropdownMenuSub v-if="canAssign">
                 <DropdownMenuSubTrigger>
                   Назначить
                 </DropdownMenuSubTrigger>
@@ -65,7 +65,7 @@
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
+              <DropdownMenuItem v-if="canDelete" variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { format } from 'date-fns'
-
+import { useBoardRoles } from '@/composables/useBoardRoles'
 import type { Task } from '../boards/types.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 import type { User } from '@/stores/userStore.ts'
@@ -283,6 +283,19 @@ async function onDeleted() {
 }
 
 const visible = ref(true)
+
+// Проверка ролей на доске
+// Используем boardId из props.task.boardId, если нет — из маршрута
+const fallbackBoardId = Number(route.params.id)
+const effectiveBoardId = computed(() => {
+  return typeof props.task.boardId === 'number' && !isNaN(props.task.boardId)
+    ? props.task.boardId
+    : (isNaN(fallbackBoardId) ? 0 : fallbackBoardId)
+})
+const { hasAnyRole, hasRole } = useBoardRoles(effectiveBoardId.value)
+const canAssign = computed(() => hasAnyRole('MANAGER', 'DEVELOPER'))
+const canDelete = computed(() => hasRole('MANAGER'))
+
 function handleDelete() {
   visible.value = false
   setTimeout(() => emit('deleteTask', props.task), 250)

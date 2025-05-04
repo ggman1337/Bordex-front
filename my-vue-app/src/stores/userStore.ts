@@ -15,6 +15,9 @@ export interface User {
   roles?: string[]
 }
 
+import type { BoardRole } from '@/constants/boardRoles'
+import { fetchUserBoardRoles, fetchAllUserBoardRoles } from '@/api/boardRoles'
+
 export interface UserState {
   id: number
   username: string
@@ -23,6 +26,7 @@ export interface UserState {
   email: string
   users: User[]
   boardUsers: Record<number, User[]> // boardId -> users
+  userBoardRoles: Record<number, BoardRole[]> // boardId -> roles текущего пользователя
 }
 
 export const useUserStore = defineStore('user', {
@@ -33,12 +37,34 @@ export const useUserStore = defineStore('user', {
     lastName: '',
     email: '',
     users: [],
-    boardUsers: {} // boardId -> users
+    boardUsers: {}, // boardId -> users
+    userBoardRoles: {} // boardId -> roles
   }),
   getters: {
-    getUserById: (state) => (id: number) => state.users.find(u => u.id === id)
+    getUserById: (state: UserState) => (id: number) => state.users.find((u: User) => u.id === id)
   },
   actions: {
+    /**
+     * Получить и сохранить роли пользователя на конкретной доске
+     */
+    async fetchUserBoardRoles(boardId: number) {
+      if (!this.id) return
+      const roles = await fetchUserBoardRoles(this.id, boardId)
+      this.userBoardRoles[boardId] = roles
+    },
+    /**
+     * Получить все роли пользователя по всем доскам (например, при инициализации)
+     */
+    async fetchAllUserBoardRoles() {
+      if (!this.id) return
+      this.userBoardRoles = await fetchAllUserBoardRoles(this.id)
+    },
+    /**
+     * Проверить, есть ли у пользователя роль на доске
+     */
+    hasBoardRole(boardId: number, role: BoardRole) {
+      return this.userBoardRoles[boardId]?.includes(role)
+    },
     async fetchCurrentUser() {
       try {
         const res = await fetch(`${baseUrl}/api/users/1`)

@@ -22,6 +22,9 @@ const routes: Array<RouteRecordRaw> = [
 
 ];
 
+import { useUserStore } from '@/stores/userStore'
+import { BOARD_ROLES } from '@/constants/boardRoles'
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes,
@@ -36,6 +39,25 @@ router.afterEach(() => {
     setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 0)
+})
+
+// Навигационный гвард для проверки ролей
+router.beforeEach(async (to, from, next) => {
+  // Проверяем доступ к настройкам доски (только MANAGER)
+  if (to.name === 'BoardSettings') {
+    const userStore = useUserStore()
+    const boardId = Number(to.params.id)
+    // Если роли не загружены — загрузить
+    if (!userStore.userBoardRoles[boardId]) {
+      await userStore.fetchUserBoardRoles(boardId)
+    }
+    if (!userStore.hasBoardRole(boardId, 'MANAGER')) {
+      // Можно заменить на кастомную страницу или toast
+      alert('Недостаточно прав для доступа к настройкам доски')
+      return next({ name: 'Boards' })
+    }
+  }
+  next()
 })
 
 export default router;

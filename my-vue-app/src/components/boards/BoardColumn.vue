@@ -6,7 +6,11 @@
   >
     <div class="bg-task text-task-foreground flex items-center mb-4">
       <span class="font-semibold text-lg flex-1">{{ column.title }}</span>
-      <button class="ml-2 text-xl text-muted-foreground hover:text-foreground" @click="openCreateTaskModal">+</button>
+      <button
+        v-if="canCreateTask"
+        class="ml-2 text-xl text-muted-foreground hover:text-foreground"
+        @click="openCreateTaskModal"
+      >+</button>
     </div>
     <transition-group name="task-fade" tag="div" class="flex flex-col">
       <template v-for="(task, idx) in column.tasks" :key="task.id">
@@ -33,6 +37,7 @@ import TaskModal from '../tasks/TaskModal.vue'
 import type { BoardColumn, Task } from './types.ts'
 import type { User } from '@/stores/userStore'
 import { ref } from 'vue'
+import { useBoardRoles } from '@/composables/useBoardRoles'
 
 const props = defineProps<{ column: BoardColumn, boardId: number }>()
 const emit = defineEmits<{
@@ -44,6 +49,10 @@ const emit = defineEmits<{
 }>()
 
 const showCreateModal = ref(false)
+
+// Проверка ролей: создавать задачи могут только DEVELOPER или MANAGER
+const { hasAnyRole } = useBoardRoles(props.boardId)
+const canCreateTask = hasAnyRole('DEVELOPER', 'MANAGER')
 
 function openCreateTaskModal() {
   showCreateModal.value = true
