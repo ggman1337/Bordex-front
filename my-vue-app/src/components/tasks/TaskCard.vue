@@ -8,7 +8,7 @@
         ]"
         @dragstart.self="onDragStart"
         @dragend.self="onDragEnd"
-        draggable="true"
+        :draggable="canEdit"
         v-bind="$attrs"
       >
         <div class="flex items-center justify-between mb-1">
@@ -27,45 +27,48 @@
             </span>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild v-if="canEdit">
               <button class="text-muted-foreground hover:text-foreground text-xl mb-6"><span>...</span></button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-32">
-              <DropdownMenuItem @click="openEditModal">Изменить</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub v-if="canAssign">
-                <DropdownMenuSubTrigger>
-                  Назначить
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent class="min-w-[160px] py-1">
-                  <DropdownMenuItem
-                    v-for="user in unassignedUsers"
-                    :key="user.id"
-                    @click="assignToUser(user)"
-                    class="px-4 py-2"
-                  >
-                    {{ user.username }}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  Снять
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent class="min-w-[160px] py-1">
-                  <DropdownMenuItem
-                    v-for="user in assignedUsers"
-                    :key="user.id"
-                    @click="unassignUser(user)"
-                    class="px-4 py-2"
-                  >
-                    {{ user.username }}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem v-if="canDelete" variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
+              <DropdownMenuItem v-if="canEdit" @click="openEditModal">Изменить</DropdownMenuItem>
+<DropdownMenuSeparator v-if="canEdit && (canAssign || canDelete)" />
+
+<DropdownMenuSub v-if="canAssign">
+  <DropdownMenuSubTrigger>
+    Назначить
+  </DropdownMenuSubTrigger>
+  <DropdownMenuSubContent class="min-w-[160px] py-1">
+    <DropdownMenuItem
+      v-for="user in unassignedUsers"
+      :key="user.id"
+      @click="assignToUser(user)"
+      class="px-4 py-2"
+    >
+      {{ user.username }}
+    </DropdownMenuItem>
+  </DropdownMenuSubContent>
+</DropdownMenuSub>
+<DropdownMenuSeparator v-if="canAssign && canDelete" />
+
+<DropdownMenuSub v-if="canAssign">
+  <DropdownMenuSubTrigger>
+    Снять
+  </DropdownMenuSubTrigger>
+  <DropdownMenuSubContent class="min-w-[160px] py-1">
+    <DropdownMenuItem
+      v-for="user in assignedUsers"
+      :key="user.id"
+      @click="unassignUser(user)"
+      class="px-4 py-2"
+    >
+      {{ user.username }}
+    </DropdownMenuItem>
+  </DropdownMenuSubContent>
+</DropdownMenuSub>
+<DropdownMenuSeparator v-if="canDelete && (canEdit || canAssign)" />
+
+<DropdownMenuItem v-if="canDelete" variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -223,6 +226,10 @@ const priorityLabel: Record<string, string> = {
 const isDragging = ref(false)
 
 function onDragStart(e: DragEvent) {
+  if (!canEdit.value) {
+    e.preventDefault()
+    return
+  }
   e.dataTransfer?.setData('taskId', String(props.task.id));
   isDragging.value = true;
 }
@@ -292,9 +299,29 @@ const effectiveBoardId = computed(() => {
     ? props.task.boardId
     : (isNaN(fallbackBoardId) ? 0 : fallbackBoardId)
 })
-const { hasAnyRole, hasRole } = useBoardRoles(effectiveBoardId.value)
-const canAssign = computed(() => hasAnyRole('MANAGER', 'DEVELOPER'))
+const { roles, hasAnyRole, hasRole } = useBoardRoles(effectiveBoardId)
+const canAssign = computed(() => hasRole('MANAGER'))
 const canDelete = computed(() => hasRole('MANAGER'))
+const isAssignedToMe = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
+const canEdit = computed(() => hasRole('MANAGER') || (hasRole('DEVELOPER') && isAssignedToMe.value))
+
+// Загружаем роли пользователя для текущей доски, если их ещё нет
+watch(
+  () => effectiveBoardId.value,
+  (id: number) => {
+    if (id && !userStore.userBoardRoles[id]) {
+      userStore.fetchUserBoardRoles(id)
+    }
+    // Диагностика: выводим boardId, роли и computed
+    console.log('TaskCard: props.task.boardId', props.task.boardId, 'route.params.id', route.params.id, 'effectiveBoardId', id)
+    console.log('TaskCard: userStore.userBoardRoles[id]', userStore.userBoardRoles[id])
+  },
+  { immediate: true }
+)
+
+watch(roles, (newRoles) => {
+  console.log('TaskCard: roles changed', newRoles)
+}, { immediate: true })
 
 function handleDelete() {
   visible.value = false

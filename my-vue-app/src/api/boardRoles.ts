@@ -1,6 +1,6 @@
 import type { BoardRole } from '@/constants/boardRoles'
 
-const BASE_URL = '/api/users/boards/roles'
+const BASE_URL = 'http://localhost:8080/api/users/boards/roles'
 
 export async function fetchUserBoardRoles(userId: number, boardId: number): Promise<BoardRole[]> {
   const url = `${BASE_URL}?userId=${userId}&boardId=${boardId}`

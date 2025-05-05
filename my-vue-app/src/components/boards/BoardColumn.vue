@@ -51,8 +51,9 @@ const emit = defineEmits<{
 const showCreateModal = ref(false)
 
 // Проверка ролей: создавать задачи могут только DEVELOPER или MANAGER
+import { computed } from 'vue'
 const { hasAnyRole } = useBoardRoles(props.boardId)
-const canCreateTask = hasAnyRole('DEVELOPER', 'MANAGER')
+const canCreateTask = computed(() => hasAnyRole('MANAGER'))
 
 function openCreateTaskModal() {
   showCreateModal.value = true

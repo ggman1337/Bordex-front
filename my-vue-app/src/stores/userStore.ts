@@ -31,7 +31,7 @@ export interface UserState {
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
-    id: 1,
+    id: 2,
     username: '',
     firstName: '',
     lastName: '',
@@ -67,7 +67,7 @@ export const useUserStore = defineStore('user', {
     },
     async fetchCurrentUser() {
       try {
-        const res = await fetch(`${baseUrl}/api/users/1`)
+        const res = await fetch(`${baseUrl}/api/users/2`)
         const data: any = await res.json()
         this.id = data.id
         this.username = data.username

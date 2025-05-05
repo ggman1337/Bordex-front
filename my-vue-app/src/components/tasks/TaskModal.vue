@@ -7,18 +7,18 @@
         </CardHeader>
         <CardContent>
           <div class="flex flex-col gap-4">
-            <label>
+            <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Название</span>
-              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :class="{'border-red-500': showTitleError}" />
+              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :class="{'border-red-500': showTitleError}" :disabled="isDeveloper && isEditMode" />
               <span v-if="showTitleError" class="text-xs text-red-500">Название задачи обязательно</span>
             </label>
-            <label>
+            <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Описание</span>
-              <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100"></textarea>
+              <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode"></textarea>
             </label>
-            <label>
+            <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Тег</span>
-              <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+              <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode">
                 <option v-for="t in tagValues" :key="t" :value="t">{{ t }}</option>
               </select>
             </label>
@@ -30,9 +30,9 @@
                 <option value="DONE">Готово</option>
               </select>
             </label>
-            <label>
+            <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Приоритет</span>
-              <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
+              <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode">
                 <option value="LOW">Не важно</option>
                 <option value="MEDIUM">Нормально</option>
                 <option value="HIGH">Важно</option>
@@ -48,7 +48,7 @@
                 placeholder="0-100"
               />
             </label>
-            <label>
+            <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Дедлайн</span>
               <Popover>
                 <PopoverTrigger as-child>
@@ -78,6 +78,8 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits, ref, watch, computed } from 'vue'
+import { useBoardRoles } from '@/composables/useBoardRoles'
+import { useRoute } from 'vue-router'
 import Card from '@/components/ui/card/Card.vue'
 import CardHeader from '@/components/ui/card/CardHeader.vue'
 import CardTitle from '@/components/ui/card/CardTitle.vue'
@@ -94,12 +96,18 @@ import { useTaskStore } from '@/stores/taskStore'
 import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
 import { tagValues } from '@/components/boards/types.ts'
 
+// Определяем boardId для проверки ролей
+const route = useRoute()
+const boardId = computed(() => props.task?.boardId ?? props.boardId ?? Number(route.params.id))
+const { hasRole } = useBoardRoles(boardId)
+const isManager = computed(() => hasRole('MANAGER'))
+const isDeveloper = computed(() => hasRole('DEVELOPER'))
+const isEditMode = computed(() => !!props.task && !!props.task.id)
+
 const props = defineProps<{ task?: BoardTask, boardId?: number }>()
 const emit = defineEmits(['close', 'updated'])
 
 const taskStore = useTaskStore()
-
-const isEditMode = computed(() => !!props.task && !!props.task.id)
 const modalTitle = ref(props.task?.name ?? '')
 const modalDescription = ref(props.task?.description ?? '')
 const modalStatus = ref(props.task?.status ?? 'NEW')
