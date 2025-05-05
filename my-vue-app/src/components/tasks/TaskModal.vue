@@ -99,8 +99,8 @@ import { tagValues } from '@/components/boards/types.ts'
 // Определяем boardId для проверки ролей
 const route = useRoute()
 const boardId = computed(() => props.task?.boardId ?? props.boardId ?? Number(route.params.id))
-const { roles, hasRole } = useBoardRoles(boardId)
-const isManager = computed(() => roles.value.includes('MANAGER') || roles.value.includes('ADMIN'))
+const { roles } = useBoardRoles(boardId)
+const isManager = computed(() => roles.value.includes('MANAGER'))
 const isDeveloper = computed(() => roles.value.includes('DEVELOPER'))
 const isEditMode = computed(() => !!props.task && !!props.task.id)
 

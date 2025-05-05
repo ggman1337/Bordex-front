@@ -35,9 +35,9 @@
       <Card class="max-w-md w-full mx-auto bg-transparent mt-4 scale-75">
         <CardHeader>
           <div class="flex items-center justify-between">
-          <CardTitle>Завершите регистрацию</CardTitle>
-          <ThemeToggle />
-        </div>
+            <CardTitle>Завершите регистрацию</CardTitle>
+            <ThemeToggle />
+          </div>
           <Button type="button" @click="goBack" class="mt-2">Назад</Button>
         </CardHeader>
         <CardContent>
@@ -272,17 +272,6 @@ input[type="checkbox"]:focus {
   background-color: #29b6f61a; /* Lighter blue background on hover */
   box-shadow: 0 2px 8px #29b6f622;
   /* border-color: #2997ff; <- Let hover state manage this if needed */
-}
-/* Ensure icon color matches text color changes on hover */
-.telegram-btn:hover .telegram-icon circle {
-  /* Keep icon background */
-}
-.telegram-btn:hover .telegram-icon path {
-  /* Keep icon paths */
-}
-.telegram-icon {
-  /* margin-right: 6px; <- Handled by gap-2 class */
-  /* vertical-align: middle; <- Handled by flex items-center */
 }
 
 /* Responsive styles */

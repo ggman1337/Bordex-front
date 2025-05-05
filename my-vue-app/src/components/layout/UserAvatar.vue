@@ -120,7 +120,4 @@ const initials = computed(() => {
 :root.dark .profile-menu-item[variant="destructive"], .dark .profile-menu-item[variant="destructive"] {
   color: #ff6b6b;
 }
-.debug-profile-menu {
-  /* outline: 2px dashed #eab308; */
-}
 </style>
