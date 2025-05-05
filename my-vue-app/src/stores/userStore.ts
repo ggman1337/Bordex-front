@@ -17,6 +17,7 @@ export interface User {
 
 import type { BoardRole } from '@/constants/boardRoles'
 import { fetchUserBoardRoles, fetchAllUserBoardRoles } from '@/api/boardRoles'
+import { subscribeBoardRolesRealtimeRaw } from '@/composables/useBoardRolesRealtime'
 
 export interface UserState {
   id: number
@@ -27,30 +28,71 @@ export interface UserState {
   users: User[]
   boardUsers: Record<number, User[]> // boardId -> users
   userBoardRoles: Record<number, BoardRole[]> // boardId -> roles текущего пользователя
+  userLoaded: boolean // был ли загружен пользователь
 }
 
 export const useUserStore = defineStore('user', {
+  // Служебное поле для хранения отписчиков ролей
+  _rolesUnsubscribers: {} as Record<number, () => void>,
   state: (): UserState => ({
-    id: 1,
+    id: 0,
     username: '',
     firstName: '',
     lastName: '',
     email: '',
     users: [],
     boardUsers: {}, // boardId -> users
-    userBoardRoles: {} // boardId -> roles
+    userBoardRoles: {}, // boardId -> roles
+    userLoaded: false // был ли загружен пользователь
   }),
   getters: {
     getUserById: (state: UserState) => (id: number) => state.users.find((u: User) => u.id === id)
   },
   actions: {
     /**
+     * Подписаться на realtime-обновления ролей пользователя на всех досках через WebSocket
+     */
+    subscribeAllBoardRolesRealtime() {
+      // Гарантируем, что _rolesUnsubscribers всегда объект
+      if (!this._rolesUnsubscribers || typeof this._rolesUnsubscribers !== 'object') {
+        this._rolesUnsubscribers = {}
+      }
+      // Отписываемся от всех предыдущих
+      Object.values(this._rolesUnsubscribers).forEach(unsub => unsub())
+      this._rolesUnsubscribers = {}
+      // Для всех известных досок (userBoardRoles)
+      Object.keys(this.userBoardRoles).forEach((boardIdStr) => {
+        const boardId = Number(boardIdStr)
+        this.subscribeBoardRolesRealtime(boardId)
+      })
+    },
+    /**
+     * Подписаться на realtime-обновления ролей пользователя на доске через WebSocket
+     */
+    subscribeBoardRolesRealtime(boardId: number) {
+      // Если уже подписаны — отписаться
+      if (this._rolesUnsubscribers[boardId]) {
+        this._rolesUnsubscribers[boardId]()
+      }
+      // Подписываемся и сохраняем отписчик
+      this._rolesUnsubscribers[boardId] = subscribeBoardRolesRealtimeRaw(
+        boardId,
+        async () => {
+          await this.fetchUserBoardRoles(boardId)
+        },
+        async () => {
+          await this.fetchUserBoardRoles(boardId)
+        }
+      )
+    },
+    /**
      * Получить и сохранить роли пользователя на конкретной доске
      */
     async fetchUserBoardRoles(boardId: number) {
       if (!this.id) return
       const roles = await fetchUserBoardRoles(this.id, boardId)
-      this.userBoardRoles[boardId] = roles
+      // Гарантируем реактивность для Pinia/Vue
+      this.userBoardRoles = { ...this.userBoardRoles, [boardId]: roles }
     },
     /**
      * Получить все роли пользователя по всем доскам (например, при инициализации)
@@ -58,6 +100,7 @@ export const useUserStore = defineStore('user', {
     async fetchAllUserBoardRoles() {
       if (!this.id) return
       this.userBoardRoles = await fetchAllUserBoardRoles(this.id)
+      this.subscribeAllBoardRolesRealtime()
     },
     /**
      * Проверить, есть ли у пользователя роль на доске
@@ -67,7 +110,8 @@ export const useUserStore = defineStore('user', {
     },
     async fetchCurrentUser() {
       try {
-        const res = await fetch(`${baseUrl}/api/users/1`)
+        const res = await fetch(`${baseUrl}/api/auth/me`, { credentials: 'include' })
+        if (!res.ok) throw new Error('Not authenticated')
         const data: any = await res.json()
         this.id = data.id
         this.username = data.username 
@@ -75,10 +119,22 @@ export const useUserStore = defineStore('user', {
         this.lastName = data.lastName
         this.email = data.email
       } catch (e) {
+        // Только сбрасываем локальные данные пользователя, но НЕ вызываем logout и не делаем запрос на сервер
+        this.id = 0
+        this.username = ''
+        this.firstName = ''
+        this.lastName = ''
+        this.email = ''
         console.error('Failed to fetch current user', e)
+      } finally {
+        this.userLoaded = true;
       }
       // Подключаем WebSocket после успешного получения пользователя
       connectWebSocket()
+      // После успешного получения пользователя пробуем подписаться на все роли (если id есть)
+      if (this.id) {
+        await this.fetchAllUserBoardRoles()
+      }
     },
     async fetchUsers() {
       try {
@@ -125,7 +181,20 @@ export const useUserStore = defineStore('user', {
         console.error('Failed to fetch users', e)
       }
     },
-    logout() {
+    async logout() {
+      // Гарантируем, что _rolesUnsubscribers всегда объект
+      if (!this._rolesUnsubscribers || typeof this._rolesUnsubscribers !== 'object') {
+        this._rolesUnsubscribers = {}
+      }
+      // Отписаться от всех realtime-ролей
+      Object.values(this._rolesUnsubscribers).forEach(unsub => unsub())
+      this._rolesUnsubscribers = {}
+      // Запрос на сервер для очистки куки
+      try {
+        await fetch('http://localhost:8080/api/auth/logout', { method: 'POST' , credentials: 'include' })
+      } catch (e) {
+        // ignore error
+      }
       // Очистить данные пользователя
       this.id = 0
       this.username = ''

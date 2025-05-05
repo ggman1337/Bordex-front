@@ -112,8 +112,8 @@
 import { format } from 'date-fns'
 import { useBoardRoles } from '@/composables/useBoardRoles'
 import type { Task } from '../boards/types.ts'
-import { useUserStore } from '@/stores/userStore.ts'
-import type { User } from '@/stores/userStore.ts'
+import { useUserStore } from '@/stores/userStore'
+import type { User } from '@/stores/userStore'
 import { computed, ref, watch } from 'vue'
 import DropdownMenu from '@/components/ui/dropdown-menu/DropdownMenu.vue'
 import {

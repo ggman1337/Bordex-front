@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
+import { useUserStore } from './userStore'
+import { apiFetch } from '@/api/apiFetch'
 import { websocketConfig } from '@/config/websocket.config'
 import type { Board } from '@/components/boards/types'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 
 // Derive REST base URL from websocket config
-const baseUrl = websocketConfig.serverUrl.replace(/\/ws$/, '')
+const baseUrl = websocketConfig.serverUrl.replace(/^https?:\/\/localhost:8080/, 'http://localhost:8080').replace(/\/ws$/, '')
 
 export const useBoardStore = defineStore('board', {
   state: () => ({
@@ -133,7 +135,7 @@ export const useBoardStore = defineStore('board', {
       }
       this.loading = true
       try {
-        const res = await fetch(`${baseUrl}/api/boards?memberIds=${userId}&page=${page}&size=${size}`)
+        const res = await apiFetch(`${baseUrl}/api/boards?memberIds=${userId}&page=${page}&size=${size}`)
         const data = await res.json()
         this.boards = data.content.map((b: any) => ({
           id: b.id,
@@ -152,7 +154,7 @@ export const useBoardStore = defineStore('board', {
     },
     async createBoard(name: string, description: string = 'Новая доска') {
       try {
-        const res = await fetch(`${baseUrl}/api/boards`, {
+        const res = await apiFetch(`${baseUrl}/api/boards`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, description, scope: 'PRIVATE' }),
@@ -174,7 +176,7 @@ export const useBoardStore = defineStore('board', {
     },
     async updateBoard(id: number, data: { name: string; description?: string; scope?: string }) {
       try {
-        const res = await fetch(`${baseUrl}/api/boards/${id}`, {
+        const res = await apiFetch(`${baseUrl}/api/boards/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: data.name, description: data.description, scope: data.scope }),
@@ -198,7 +200,7 @@ export const useBoardStore = defineStore('board', {
     },
     async deleteBoard(id: number) {
       try {
-        await fetch(`${baseUrl}/api/boards/${id}`, { method: 'DELETE' })
+        await apiFetch(`${baseUrl}/api/boards/${id}`, { method: 'DELETE' })
         this.boards = this.boards.filter(b => b.id !== id)
       } catch (e: any) {
         this.error = e.message

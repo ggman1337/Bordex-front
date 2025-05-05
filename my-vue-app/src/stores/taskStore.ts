@@ -4,8 +4,9 @@ import { websocketConfig } from '@/config/websocket.config'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import type { Task as BoardTask, BoardColumn } from '@/components/boards/types'
 import { useUserStore } from '@/stores/userStore'
+import { apiFetch } from '@/api/apiFetch'
 
-const baseUrl = websocketConfig.serverUrl
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // removed statusColors – tags now use backend-provided tagColor
 
@@ -32,7 +33,7 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   async function fetchTasks(boardId: number, page = 0, size = 200) {
-    const res = await fetch(`${baseUrl}/api/tasks?boardId=${boardId}&page=${page}&size=${size}`)
+    const res = await apiFetch(`${baseUrl}/api/tasks?boardId=${boardId}&page=${page}&size=${size}`)
     const data: any = await res.json()
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     const mapped: BoardTask[] = raw.map(mapTask)
@@ -44,7 +45,7 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   async function fetchTasksForUser(userId: number, page = 0, size = 200) {
-    const res = await fetch(`${baseUrl}/api/tasks?assigneeIds=${userId}&page=${page}&size=${size}`)
+    const res = await apiFetch(`${baseUrl}/api/tasks?assigneeIds=${userId}&page=${page}&size=${size}`)
     const data: any = await res.json()
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     userTasks.value = raw.map(mapTask)
@@ -94,7 +95,7 @@ export const useTaskStore = defineStore('task', () => {
     deadline?: string | null
     progress?: number
   }) {
-    await fetch(`${baseUrl}/api/tasks/${boardId}`, {
+    await apiFetch(`${baseUrl}/api/tasks/${boardId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -123,7 +124,7 @@ export const useTaskStore = defineStore('task', () => {
       progress?: number
     }>
   ) {
-    await fetch(`${baseUrl}/api/tasks/${taskId}`, {
+    await apiFetch(`${baseUrl}/api/tasks/${taskId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(taskData)
@@ -132,19 +133,19 @@ export const useTaskStore = defineStore('task', () => {
 
   // удаление задачи
   async function deleteTask(boardId: number, taskId: number) {
-    await fetch(`${baseUrl}/api/tasks/${taskId}`, { method: 'DELETE' })
+    await apiFetch(`${baseUrl}/api/tasks/${taskId}`, { method: 'DELETE' })
     // обновить список задач
     fetchTasks(boardId)
   }
 
   // назначить пользователя к задаче
   async function assignUser(taskId: number, userId: number) {
-    await fetch(`${baseUrl}/api/tasks/${taskId}/assign-user/${userId}`, { method: 'PATCH' })
+    await apiFetch(`${baseUrl}/api/tasks/${taskId}/assign-user/${userId}`, { method: 'PATCH' })
   }
 
   // отменить назначение пользователя к задаче
   async function unassignUser(taskId: number, userId: number) {
-    await fetch(`${baseUrl}/api/tasks/${taskId}/unassign-user/${userId}`, { method: 'PATCH' })
+    await apiFetch(`${baseUrl}/api/tasks/${taskId}/unassign-user/${userId}`, { method: 'PATCH' })
   }
 
   // --- Вебсокет для MyTasksPage ---

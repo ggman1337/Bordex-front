@@ -24,7 +24,7 @@
         Настройки профиля
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="profile-menu-item" variant="destructive">
+      <DropdownMenuItem class="profile-menu-item" variant="destructive" @click="handleLogout">
         <span class="icon" v-html="icons.IconLogout" />
         Выйти
       </DropdownMenuItem>
@@ -35,17 +35,36 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { useUserStore } from '@/stores/userStore.ts'
-import { computed } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as icons from './ProfileMenuIcons'
 
 const router = useRouter()
 const store = useUserStore()
+
+onMounted(async () => {
+  if (!store.userLoaded) {
+    await store.fetchCurrentUser()
+  }
+})
+
 function goToBoards() {
   router.push('/boards')
 }
-const user = computed(() => store.getUserById(store.id))
+
+async function handleLogout() {
+  await store.logout()
+  router.push('/login')
+}
+
+const user = computed(() => ({
+  firstName: store.firstName,
+  lastName: store.lastName,
+  username: store.username,
+  email: store.email
+}))
+
 const initials = computed(() => {
   if (user.value) {
     const { firstName, lastName, username } = user.value

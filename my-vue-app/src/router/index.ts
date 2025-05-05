@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     {path: '/', name: 'Home', component: MyBoardsPage},
     {path: '/boards', name: 'Boards', component: MyBoardsPage},
     {path: '/boards/:id', name: 'Board', component: BoardPage},
-    {path: '/boards/:id/settings', name: 'BoardSettings', component: BoardSettingsPage,},
+    {path: '/boards/:id/settings', name: 'BoardSettings', component: BoardSettingsPage},
     {path: '/tasks', name: 'Tasks', component: MyTasksPage},
     {path: '/login', name: 'Login', component: LoginPage},
     {path: '/register', name: 'Register', component: RegisterPage},
@@ -23,7 +23,6 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 import { useUserStore } from '@/stores/userStore'
-import { BOARD_ROLES } from '@/constants/boardRoles'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,23 +40,33 @@ router.afterEach(() => {
     }, 0)
 })
 
-// Навигационный гвард для проверки ролей
+// Глобальный guard для авторизации
 router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+  // Дожидаемся загрузки пользователя, если еще не загружен
+  if (!userStore.userLoaded) {
+    await userStore.fetchCurrentUser();
+  }
+  // Проверяем, если пользователь не авторизован (id === 0)
+  // и не переходит на login/register
+  const publicPages = ['Login', 'Register'];
+  if (userStore.id === 0 && !publicPages.includes(to.name as string)) {
+    return next({ name: 'Register' });
+  }
   // Проверяем доступ к настройкам доски (только MANAGER)
   if (to.name === 'BoardSettings') {
-    const userStore = useUserStore()
-    const boardId = Number(to.params.id)
+    const boardId = Number(to.params.id);
     // Если роли не загружены — загрузить
     if (!userStore.userBoardRoles[boardId]) {
-      await userStore.fetchUserBoardRoles(boardId)
+      await userStore.fetchUserBoardRoles(boardId);
     }
     if (!userStore.hasBoardRole(boardId, 'MANAGER')) {
       // Можно заменить на кастомную страницу или toast
-      alert('Недостаточно прав для доступа к настройкам доски')
-      return next({ name: 'Boards' })
+      alert('Недостаточно прав для доступа к настройкам доски');
+      return next({ name: 'Boards' });
     }
   }
-  next()
-})
+  next();
+});
 
 export default router;

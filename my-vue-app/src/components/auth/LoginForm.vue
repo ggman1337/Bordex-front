@@ -50,7 +50,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import {useUserStore} from '@/stores/userStore'
 const router = useRouter()
+const userStore = useUserStore()
 // Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
@@ -101,20 +103,17 @@ const onSubmit = async () => {
       }),
       credentials: 'include'
     })
-    const data = await response.json()
+
     if (!response.ok) {
-      if (typeof data === 'object' && data !== null) {
-        errors.value = data
-        toast('Ошибка авторизации', { description: Object.values(data).flat().join('\n'), duration: 4000, class: 'bg-red-600 text-white' })
-      } else {
-        toast('Ошибка авторизации', { description: data.message || 'Ошибка', duration: 4000, class: 'bg-red-600 text-white' })
-      }
+      toast('Ошибка авторизации', { description: 'Ошибка', duration: 4000, class: 'bg-red-600 text-white' })
       return
     }
     toast('Успешный вход', { description: 'Добро пожаловать!', duration: 2000, class: 'bg-green-600 text-white' })
+    // После логина обновляем userStore
+    await userStore.fetchCurrentUser()
     router.push('/')
-    // TODO: сохранить токен, сделать редирект и т.д.
   } catch (error) {
+    console.log('error:', error)
     toast('Ошибка', { description: 'Сервер недоступен', duration: 4000, class: 'bg-red-600 text-white' })
   }
 }
