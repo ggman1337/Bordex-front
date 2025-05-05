@@ -128,6 +128,20 @@
   scrollbar-width: none;
 }
 
+.dark .vue-sonner-toast {
+  background-color: #23242a !important;
+  color: #fff !important;
+  border-color: #404040 !important;
+}
+
+.dark [data-sonner-toaster] li {
+  background: #23242a !important;
+  color: #fff !important;
+}
+.dark [data-sonner-toaster] li [data-content] {
+  color: #fff !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

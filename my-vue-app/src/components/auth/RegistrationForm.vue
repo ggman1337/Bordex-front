@@ -1,8 +1,11 @@
 <template>
   <div >
-    <Card v-if="!showFullForm" class="max-w-md w-full mx-auto bg-transparent">
+    <Card v-if="!showFullForm" class="max-w-md w-full mx-0 bg-transparent">
       <CardHeader>
-        <CardTitle class="text-xl font-bold mb-2">Создайте аккаунт</CardTitle>
+        <div class="flex items-center justify-between mb-2">
+          <CardTitle class="text-xl font-bold">Создайте аккаунт</CardTitle>
+          <ThemeToggle />
+        </div>
       </CardHeader>
       <CardContent>
         <form @submit.prevent="onSubmit" class="space-y-6">
@@ -31,7 +34,10 @@
     <div v-if="showFullForm">
       <Card class="max-w-md w-full mx-auto bg-transparent mt-4 scale-75">
         <CardHeader>
+          <div class="flex items-center justify-between">
           <CardTitle>Завершите регистрацию</CardTitle>
+          <ThemeToggle />
+        </div>
           <Button type="button" @click="goBack" class="mt-2">Назад</Button>
         </CardHeader>
         <CardContent>
@@ -86,6 +92,7 @@ import CardHeader from '@/components/ui/card/CardHeader.vue'
 import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
+import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 // --- Reactive Form State ---
 const router = useRouter();

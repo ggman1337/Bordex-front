@@ -1,7 +1,8 @@
 <template>
   <MainLayout>
     <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
-      <h1 v-if="board" class="text-3xl font-semibold mb-4 dark:text-dark-100" v-text="board.title" />
+      <h1 v-if="!isUserLoading" class="text-3xl font-semibold mb-4 dark:text-dark-100">{{ boardName }}</h1>
+      <div v-else class="text-xl font-semibold mb-4 dark:text-dark-100">Загрузка...</div>
       <div class="flex gap-6 overflow-x-auto">
         <BoardColumn
           v-for="col in columns"
@@ -123,7 +124,20 @@ const boardId = computed(() => Number(route.params.id))
 const boardStore = useBoardStore()
 const taskStore = useTaskStore()
 const userStore = useUserStore()
-const board = computed(() => boardStore.boardById(boardId.value))
+const isUserLoading = ref(false)
+
+onMounted(async () => {
+  if (!userStore.userLoaded) {
+    isUserLoading.value = true
+    await userStore.fetchCurrentUser()
+    isUserLoading.value = false
+  }
+})
+
+const boardName = computed(() => {
+  return userStore.boards.find(b => b.id === boardId.value)?.name || 'Без названия'
+})
+
 const columns = computed(() => taskStore.columns)
 
 // Модальный режим

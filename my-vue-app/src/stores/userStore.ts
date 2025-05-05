@@ -28,6 +28,7 @@ export interface UserState {
   users: User[]
   boardUsers: Record<number, User[]> // boardId -> users
   userBoardRoles: Record<number, BoardRole[]> // boardId -> roles текущего пользователя
+  boards: Array<{ id: number, name: string }>
   userLoaded: boolean // был ли загружен пользователь
 }
 
@@ -43,6 +44,7 @@ export const useUserStore = defineStore('user', {
     users: [],
     boardUsers: {}, // boardId -> users
     userBoardRoles: {}, // boardId -> roles
+    boards: [],
     userLoaded: false // был ли загружен пользователь
   }),
   getters: {
@@ -118,6 +120,7 @@ export const useUserStore = defineStore('user', {
         this.firstName = data.firstName
         this.lastName = data.lastName
         this.email = data.email
+        this.boards = (data.userBoardRoles || []).map((ubr: any) => ubr.board)
       } catch (e) {
         // Только сбрасываем локальные данные пользователя, но НЕ вызываем logout и не делаем запрос на сервер
         this.id = 0
