@@ -31,7 +31,7 @@ export interface UserState {
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
-    id: 2,
+    id: 1,
     username: '',
     firstName: '',
     lastName: '',
@@ -67,10 +67,10 @@ export const useUserStore = defineStore('user', {
     },
     async fetchCurrentUser() {
       try {
-        const res = await fetch(`${baseUrl}/api/users/2`)
+        const res = await fetch(`${baseUrl}/api/users/1`)
         const data: any = await res.json()
         this.id = data.id
-        this.username = data.username
+        this.username = data.username 
         this.firstName = data.firstName
         this.lastName = data.lastName
         this.email = data.email
@@ -101,18 +101,26 @@ export const useUserStore = defineStore('user', {
       try {
         const res = await fetch(`${baseUrl}/api/users?boardIds=${boardId}&page=0&size=200`)
         const data: any = await res.json()
-        const usersData: any[] = Array.isArray(data.content) ? data.content : []
-        const mappedUsers = usersData.map((u: any) => ({
-          id: u.id,
-          username: u.username,
-          firstName: u.firstName,
-          lastName: u.lastName,
-          email: u.email,
-          roles: u.roles || []
-        }))
-        this.boardUsers[boardId] = mappedUsers
-        // если текущая доска активна — обновим users для обратной совместимости
-        this.users = mappedUsers
+        this.boardUsers[boardId] = (data.content || []).map((u: any) => {
+          // Собираем boardRoles в объект user.boardRoles[boardId]
+          let boardRolesMap: Record<number, string[]> = {}
+          if (Array.isArray(u.userBoardRoles)) {
+            for (const entry of u.userBoardRoles) {
+              if (entry.board && entry.board.id && Array.isArray(entry.boardRoles)) {
+                boardRolesMap[entry.board.id] = entry.boardRoles
+              }
+            }
+          }
+          return {
+            id: u.id,
+            username: u.username,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+            roles: u.roles || [],
+            boardRoles: boardRolesMap
+          }
+        })
       } catch (e) {
         console.error('Failed to fetch users', e)
       }

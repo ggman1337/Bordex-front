@@ -69,6 +69,7 @@
 <script setup lang="ts">
 import { ref, toRef, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useBoardStore } from '@/stores/boardStore'
+import { useUserStore } from '@/stores/userStore'
 import BoardCard from '@/components/boards/BoardCard.vue'
 import type { Board as BoardType } from '@/components/boards/types'
 import Card from '@/components/ui/card/Card.vue'
@@ -81,17 +82,21 @@ import CardAction from '@/components/ui/card/CardAction.vue'
 const props = defineProps<{ boards: BoardType[] }>()
 const boards = toRef(props, 'boards')
 const boardStore = useBoardStore()
-
+const userStore = useUserStore()
 // --- Вебсокет-подписка на все доски ---
 let connectedBoardIds: number[] = []
 
-function connectAllBoards() {
+async function connectAllBoards() {
   // disconnectAllBoards()
-  console.log('[WebSocket] Подписка на доски пользователя 1 (userId=1)')
-  boardStore.connectUserBoardRealtime(1)
+  await userStore.fetchCurrentUser()
+  if (userStore.id) {
+    console.log('[WebSocket] Подписка на доски пользователя', userStore.id)
+    boardStore.connectUserBoardRealtime(userStore.id)
+    await boardStore.fetchBoards(userStore.id)
+  }
 }
 function disconnectAllBoards() {
-  boardStore.disconnectUserBoardRealtime(1)
+  boardStore.disconnectUserBoardRealtime(userStore.id)
   connectedBoardIds = []
 }
 
@@ -101,9 +106,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   disconnectAllBoards()
 })
-watch(boards, () => {
-  connectAllBoards()
-}, { deep: true })
 
 // Модальное окно создания доски
 const showBoardModal = ref(false)
@@ -123,7 +125,16 @@ async function submitBoardModal() {
   if (!name) return
   // Создать доску и сразу обновить список
   await boardStore.createBoard(name, description || undefined)
-  await boardStore.fetchBoards()
+  if (userStore.id) {
+    await boardStore.fetchBoards(userStore.id)
+  } else {
+    const stop = watch(() => userStore.id, async (id) => {
+      if (id) {
+        await boardStore.fetchBoards(id)
+        stop()
+      }
+    })
+  }
   closeBoardModal()
 }
 

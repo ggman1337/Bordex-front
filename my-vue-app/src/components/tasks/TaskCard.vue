@@ -210,8 +210,17 @@ const usersForAssignment = computed<User[]>(() => {
 })
 
 // Список пользователей, которым задача еще не назначена
+// Получить роль пользователя на доске
+function getUserBoardRole(user) {
+  const boardRoles = user.boardRoles?.[props.task?.boardId ?? boardId] || []
+  return Array.isArray(boardRoles) ? boardRoles : []
+}
+
 const unassignedUsers = computed<User[]>(() => {
-  return usersForAssignment.value.filter(u => !assignedUsers.value.some(a => a.id === u.id))
+  return usersForAssignment.value.filter(u => {
+    const roles = getUserBoardRole(u)
+    return roles.includes('DEVELOPER') && !assignedUsers.value.some(a => a.id === u.id)
+  })
 })
 
 // Список пользователей, которым задача назначена

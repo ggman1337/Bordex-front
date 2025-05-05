@@ -49,6 +49,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 // Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
@@ -96,7 +98,8 @@ const onSubmit = async () => {
       body: JSON.stringify({
         username: login.value,
         password: password.value
-      })
+      }),
+      credentials: 'include'
     })
     const data = await response.json()
     if (!response.ok) {
@@ -109,6 +112,7 @@ const onSubmit = async () => {
       return
     }
     toast('Успешный вход', { description: 'Добро пожаловать!', duration: 2000, class: 'bg-green-600 text-white' })
+    router.push('/')
     // TODO: сохранить токен, сделать редирект и т.д.
   } catch (error) {
     toast('Ошибка', { description: 'Сервер недоступен', duration: 4000, class: 'bg-red-600 text-white' })

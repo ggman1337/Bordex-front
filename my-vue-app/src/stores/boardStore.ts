@@ -125,10 +125,15 @@ export const useBoardStore = defineStore('board', {
       this.currentBoardId = id
       if (typeof localStorage !== 'undefined') localStorage.setItem('currentBoardId', id.toString())
     },
-    async fetchBoards(page = 0, size = 1000) {
+    async fetchBoards(userId: number, page = 0, size = 1000) {
+      if (!userId || isNaN(userId)) {
+        console.warn('fetchBoards: userId is not defined or invalid:', userId)
+        this.loading = false
+        return
+      }
       this.loading = true
       try {
-        const res = await fetch(`${baseUrl}/api/boards?page=${page}&size=${size}`)
+        const res = await fetch(`${baseUrl}/api/boards?memberIds=${userId}&page=${page}&size=${size}`)
         const data = await res.json()
         this.boards = data.content.map((b: any) => ({
           id: b.id,
