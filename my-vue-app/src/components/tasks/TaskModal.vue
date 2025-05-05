@@ -9,16 +9,16 @@
           <div class="flex flex-col gap-4">
             <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Название</span>
-              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :class="{'border-red-500': showTitleError}" :disabled="isDeveloper && isEditMode" />
+              <input v-model="modalTitle" placeholder=" " class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :class="{'border-red-500': showTitleError}" :disabled="isDeveloper && !isManager && isEditMode" />
               <span v-if="showTitleError" class="text-xs text-red-500">Название задачи обязательно</span>
             </label>
             <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Описание</span>
-              <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode"></textarea>
+              <textarea v-model="modalDescription" placeholder="Описание" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && !isManager && isEditMode"></textarea>
             </label>
             <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Тег</span>
-              <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode">
+              <select v-model="modalTag" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && !isManager && isEditMode">
                 <option v-for="t in tagValues" :key="t" :value="t">{{ t }}</option>
               </select>
             </label>
@@ -32,7 +32,7 @@
             </label>
             <label v-if="isManager || !isEditMode">
               <span class="text-sm font-semibold dark:text-dark-200">Приоритет</span>
-              <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && isEditMode">
+              <select v-model="modalPriority" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" :disabled="isDeveloper && !isManager && isEditMode">
                 <option value="LOW">Не важно</option>
                 <option value="MEDIUM">Нормально</option>
                 <option value="HIGH">Важно</option>
@@ -99,9 +99,9 @@ import { tagValues } from '@/components/boards/types.ts'
 // Определяем boardId для проверки ролей
 const route = useRoute()
 const boardId = computed(() => props.task?.boardId ?? props.boardId ?? Number(route.params.id))
-const { hasRole } = useBoardRoles(boardId)
-const isManager = computed(() => hasRole('MANAGER'))
-const isDeveloper = computed(() => hasRole('DEVELOPER'))
+const { roles, hasRole } = useBoardRoles(boardId)
+const isManager = computed(() => roles.value.includes('MANAGER') || roles.value.includes('ADMIN'))
+const isDeveloper = computed(() => roles.value.includes('DEVELOPER'))
 const isEditMode = computed(() => !!props.task && !!props.task.id)
 
 const props = defineProps<{ task?: BoardTask, boardId?: number }>()

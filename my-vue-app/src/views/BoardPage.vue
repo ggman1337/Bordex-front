@@ -257,7 +257,7 @@ async function loadData(id: number) {
   // очистить предыдущие задачи сразу при смене доски
   taskStore.columns = []
   // загрузить доски
-  await boardStore.fetchBoards()
+  await boardStore.fetchBoards(userStore.id)
   // загрузить текущего пользователя и список участников доски
   await userStore.fetchCurrentUser()
   await userStore.fetchUsersFromBoard(id)

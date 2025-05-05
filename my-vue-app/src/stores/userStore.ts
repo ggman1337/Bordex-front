@@ -33,9 +33,7 @@ export interface UserState {
 }
 
 export const useUserStore = defineStore('user', {
-  // Служебное поле для хранения отписчиков ролей
-  _rolesUnsubscribers: {} as Record<number, () => void>,
-  state: (): UserState => ({
+  state: (): UserState & { _rolesUnsubscribers: Record<number, () => void> } => ({
     id: 0,
     username: '',
     firstName: '',
@@ -45,7 +43,8 @@ export const useUserStore = defineStore('user', {
     boardUsers: {}, // boardId -> users
     userBoardRoles: {}, // boardId -> roles
     boards: [],
-    userLoaded: false // был ли загружен пользователь
+    userLoaded: false, // был ли загружен пользователь
+    _rolesUnsubscribers: {}
   }),
   getters: {
     getUserById: (state: UserState) => (id: number) => state.users.find((u: User) => u.id === id)
@@ -81,6 +80,7 @@ export const useUserStore = defineStore('user', {
         boardId,
         async () => {
           await this.fetchUserBoardRoles(boardId)
+          await this.fetchUsersFromBoard(boardId) // <-- обновляем список пользователей после изменения ролей
         },
         async () => {
           await this.fetchUserBoardRoles(boardId)
