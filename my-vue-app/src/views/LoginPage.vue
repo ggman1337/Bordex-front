@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
     <div class="w-full max-w-md">
-      <div class="flex justify-end mb-4">
+      <div class="flex justify-end mb-4 ">
         <button class="border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition" @click="goToRegister">Зарегистрироваться</button>
       </div>
       <LoginForm />

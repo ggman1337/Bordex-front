@@ -1,8 +1,16 @@
 <template>
   <MainLayout>
     <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
-      <h1 v-if="!isUserLoading" class="text-3xl font-semibold mb-4 dark:text-dark-100">{{ boardName }}</h1>
-      <div v-else class="text-xl font-semibold mb-4 dark:text-dark-100">Загрузка...</div>
+      <div class="flex items-center justify-between mb-4">
+        <h1 v-if="!isUserLoading" class="text-3xl font-semibold dark:text-dark-100">{{ boardName }}</h1>
+        <button
+          class="flex items-center gap-2 bg-card text-card-foreground border border-border rounded px-3 py-1 shadow hover:bg-muted dark:bg-dark-700 dark:text-dark-100 dark:border-dark-300"
+          @click="showSettingsModal = true"
+        >
+          <Settings class="w-5 h-5" />
+          Настройки
+        </button>
+      </div>
       <div class="flex gap-6 overflow-x-auto">
         <BoardColumn
           v-for="col in columns"
@@ -15,6 +23,14 @@
           @assignToUser="assignToUser"
         />
       </div>
+      <teleport to="body">
+        <div v-if="showSettingsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-lg relative dark:bg-[#23272f]">
+            <button class="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-foreground" @click="showSettingsModal = false">×</button>
+            <BoardSettingsForm :board-id="boardId" />
+          </div>
+        </div>
+      </teleport>
       <teleport to="body" v-if="showTaskModal && !editTask">
         <!-- Модальное окно задачи -->
         <div class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
@@ -53,6 +69,10 @@
                     <option value="MEDIUM">Нормально</option>
                     <option value="HIGH">Важно</option>
                   </select>
+                </label>
+                <label>
+                  <span class="text-sm font-semibold dark:text-dark-200">Прогресс</span>
+                  <input v-model="modalProgress" type="number" min="0" max="100" class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" />
                 </label>
                 <label>
                   <span class="text-sm font-semibold dark:text-dark-200">Дедлайн</span>
@@ -118,6 +138,8 @@ import {
 import { CalendarIcon } from 'lucide-vue-next'
 import TaskModal from '@/components/tasks/TaskModal.vue'
 import TaskDeleteModal from '@/components/tasks/TaskDeleteModal.vue'
+import BoardSettingsForm from '@/components/settings/BoardSettingsForm.vue'
+import { Settings } from 'lucide-vue-next'
 
 const route = useRoute()
 const boardId = computed(() => Number(route.params.id))
@@ -150,22 +172,27 @@ const modalStatus = ref<'NEW' | 'IN_PROGRESS' | 'DONE'>('NEW')
 const modalPriority = ref<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
 const modalTag = ref<TagValue>(tagValues[0])
 const modalDeadline = ref<DateValue | undefined>(undefined)
+const modalProgress = ref<number>(0)
 const df = new DateFormatter('ru-RU', { dateStyle: 'long' })
 
 // Deletion modal state and handlers
 const showDeleteModal = ref(false)
 const selectedDeleteTask = ref<BoardTask | null>(null)
 
+// Settings modal state and handlers
+const showSettingsModal = ref(false)
+
 // Открыть форму создания
-function openNewTaskForm(columnId: number) {
+function openNewTaskForm({ columnId, status }: { columnId: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }) {
   editTask.value = null
   selectedColumnId.value = columnId
   modalTitle.value = ''
   modalDescription.value = ''
   modalTag.value = tagValues[0]
-  modalStatus.value = columnId === 1 ? 'NEW' : columnId === 2 ? 'IN_PROGRESS' : 'DONE'
+  modalStatus.value = status
   modalPriority.value = 'LOW'
   modalDeadline.value = undefined
+  modalProgress.value = 0
   showTaskModal.value = true
 }
 
@@ -191,6 +218,7 @@ function openEditTaskForm(task: BoardTask) {
   modalPriority.value = task.priority as any
   modalTag.value = task.tag.value
   modalDeadline.value = task.deadline ? parseDate(task.deadline.slice(0, 10)) : undefined
+  modalProgress.value = task.progress
   showTaskModal.value = true
 }
 
@@ -209,6 +237,7 @@ async function submitTaskModal() {
       priority: modalPriority.value,
       tag: modalTag.value,
       deadline,
+      progress: modalProgress.value,
     })
   } else {
     await taskStore.createTask(boardId.value, {
@@ -218,6 +247,7 @@ async function submitTaskModal() {
       priority: modalPriority.value,
       tag: modalTag.value,
       deadline,
+      progress: modalProgress.value,
     })
   }
   showTaskModal.value = false
@@ -282,4 +312,7 @@ onBeforeUnmount(() => taskStore.disconnect())
 </script>
 
 <style scoped>
+.dark .modal-settings-container {
+  background: #23272f !important;
+}
 </style>

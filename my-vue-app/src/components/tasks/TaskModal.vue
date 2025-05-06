@@ -104,13 +104,13 @@ const isManager = computed(() => roles.value.includes('MANAGER'))
 const isDeveloper = computed(() => roles.value.includes('DEVELOPER'))
 const isEditMode = computed(() => !!props.task && !!props.task.id)
 
-const props = defineProps<{ task?: BoardTask, boardId?: number }>()
+const props = defineProps<{ task?: BoardTask, boardId?: number, status?: 'NEW' | 'IN_PROGRESS' | 'DONE' }>()
 const emit = defineEmits(['close', 'updated'])
 
 const taskStore = useTaskStore()
 const modalTitle = ref(props.task?.name ?? '')
 const modalDescription = ref(props.task?.description ?? '')
-const modalStatus = ref(props.task?.status ?? 'NEW')
+const modalStatus = ref(props.task?.status ?? props.status ?? 'NEW')
 const modalPriority = ref((props.task?.priority as any) ?? 'LOW')
 const modalTag = ref<TagValue>(props.task?.tag?.value ?? tagValues[0])
 const modalDeadline = ref(props.task?.deadline ? parseDate(props.task.deadline.slice(0, 10)) : undefined)
@@ -128,6 +128,16 @@ watch(
     modalDeadline.value = t.deadline ? parseDate(t.deadline.slice(0, 10)) : undefined
     modalProgress.value = typeof t.progress === 'number' ? t.progress : 0
   }
+)
+
+watch(
+  () => props.status,
+  (s) => {
+    if (!isEditMode.value && s) {
+      modalStatus.value = s
+    }
+  },
+  { immediate: true }
 )
 
 const df = new DateFormatter('ru-RU', { dateStyle: 'long' })

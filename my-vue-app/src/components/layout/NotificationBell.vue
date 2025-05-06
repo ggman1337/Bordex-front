@@ -1,10 +1,11 @@
 <template>
-  <div class="relative inline-block">
+  <div class="relative inline-block notification-bell-wrapper">
     <Avatar class="notification-bell text-foreground w-8 h-8 flex items-center justify-center" @click.stop="toggleMenu">
       <svg class="w-5 h-5 text-foreground" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
         <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" />
         <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" />
       </svg>
+      <span v-if="hasUnread" class="notification-badge"></span>
     </Avatar>
     <transition name="fade">
       <div v-if="showMenu" ref="menuRef" class="notification-menu notification-menu-scroll absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-md z-50">
@@ -12,12 +13,12 @@
         <div v-else-if="error" class="p-4 text-red-500 text-center">{{ error }}</div>
         <div v-else-if="notifications.length === 0" class="p-4 text-gray-500 text-center">Нет новых уведомлений</div>
         <ul v-else>
-          <li v-for="(notif, idx) in notifications" :key="notif.id || idx" class="px-4 py-3 border-b last:border-b-0 hover:bg-gray-100 cursor-pointer relative group">
+          <li v-for="(notif, idx) in notifications" :key="notif.id || idx" class="px-4 py-3 border-b last:border-b-0 hover:bg-gray-100 cursor-pointer relative group" :class="{'unread-notification': notif.isRead === false}" @click="markAsRead(notif)">
             <div class="flex items-center justify-between">
               <div class="font-medium">{{ notif.title }}</div>
               <div class="flex items-center gap-2">
-                <span class="event-type-badge" :style="{background: eventTypeColorMap[notif.eventType] || '#2563eb'}">{{ eventTypeMap[notif.eventType] || notif.eventType }}</span>
-                <button v-if="notif.id" @click.stop="deleteNotification(notif.id, idx)" class="delete-btn opacity-70 hover:opacity-100 p-1 rounded transition" title="Удалить" :disabled="deletingMap[notif.id]">
+                <span class="event-type-badge" :class="badgeClass(notif.eventType)" :style="{background: eventTypeColorMap[notif.eventType] || '#2563eb'}">{{ eventTypeMap[notif.eventType] || notif.eventType }}</span>
+                <button class="delete-btn ml-2" :disabled="deletingMap[notif.id]" @click.stop="deleteNotification(notif.id, idx)" title="Удалить уведомление">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" :class="{'delete-cross': true}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
@@ -35,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Avatar } from '@/components/ui/avatar'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import { useUserStore } from '@/stores/userStore'
@@ -93,7 +94,6 @@ const eventTypeColorMap: Record<string, string> = {
   BOARD_ROLE_DELETED: '#111827',// чёрный
 }
 
-
 const notifications = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
@@ -111,7 +111,8 @@ async function fetchNotifications() {
       title: n.title || 'Уведомление',
       content: n.content || '',
       createdAt: n.createdAt || '',
-      eventType: n.eventType || ''
+      eventType: n.eventType || '',
+      isRead: n.isRead || false
     })) : []
   } catch (e: any) {
     error.value = e.message || 'Ошибка'
@@ -152,11 +153,23 @@ function formatTime(dateStr: string) {
   return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+function markAsRead(notif: any) {
+  if (notif.isRead === false) notif.isRead = true
+}
+
+function badgeClass(eventType: string) {
+  // Для красных badge (TASK_DELETED) возвращаем класс
+  if (eventType === 'TASK_DELETED') return 'red-badge'
+  return ''
+}
+
 const userStore = useUserStore()
 const topic = `/topic/notification/user/${userStore.id}`
 
 console.log('[NotificationBell] userStore.id:', userStore.id)
 console.log('[NotificationBell] Подписка на топик:', topic)
+
+const hasUnread = computed(() => notifications.value.some(n => n.isRead === false))
 
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
@@ -170,7 +183,8 @@ onMounted(() => {
         title: notif.title || 'Уведомление',
         content: notif.content || '',
         createdAt: notif.createdAt || '',
-        eventType: notif.eventType || ''
+        eventType: notif.eventType || '',
+        isRead: notif.isRead || false
       })
     } catch (e) {
       console.error('[NotificationBell] Ошибка парсинга уведомления:', e)
@@ -184,7 +198,26 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.notification-bell { cursor: pointer; }
+.notification-bell-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.notification-bell {
+  cursor: pointer;
+  position: relative;
+}
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: #ff3b30;
+  border-radius: 50%;
+  border: 2px solid white;
+  z-index: 2;
+  box-shadow: 0 0 2px rgba(0,0,0,0.15);
+}
 .notification-menu {
   min-width: 200px;
   background: white;
@@ -327,6 +360,21 @@ onBeforeUnmount(() => {
 .dark .event-type-badge {
   color: #e0e7ef;
   box-shadow: 0 1px 4px rgba(129,140,248,0.15);
+  background: #2563eb;
 }
 
+.dark .event-type-badge.red-badge {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.unread-notification {
+  font-weight: bold;
+  background: #fef2f2;
+}
+
+.dark .unread-notification {
+  background: #27272a;
+  color: #e5e5e5;
+}
 </style>

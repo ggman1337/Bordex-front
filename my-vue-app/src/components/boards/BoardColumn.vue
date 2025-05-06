@@ -27,7 +27,7 @@
     </transition-group>
   </div>
   <template v-if="showCreateModal">
-    <TaskModal :board-id="boardId" @close="closeCreateTaskModal" @updated="handleTaskCreated" />
+    <TaskModal :board-id="boardId" :status="statusForModal" @close="closeCreateTaskModal" @updated="handleTaskCreated" />
   </template>
 </template>
 
@@ -36,12 +36,12 @@ import TaskCard from '../tasks/TaskCard.vue'
 import TaskModal from '../tasks/TaskModal.vue'
 import type { BoardColumn, Task } from './types.ts'
 import type { User } from '@/stores/userStore'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useBoardRoles } from '@/composables/useBoardRoles'
 
 const props = defineProps<{ column: BoardColumn, boardId: number }>()
 const emit = defineEmits<{
-  (e: 'createTask', columnId: number): void
+  (e: 'createTask', payload: { columnId: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }): void
   (e: 'updateTask', task: Task | { id: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }): void
   (e: 'deleteTask', task: Task): void
   (e: 'assignTask', userId: number): void
@@ -51,16 +51,23 @@ const emit = defineEmits<{
 const showCreateModal = ref(false)
 
 // Проверка ролей: создавать задачи могут только DEVELOPER или MANAGER
-import { computed } from 'vue'
 const { hasAnyRole } = useBoardRoles(props.boardId)
 const canCreateTask = computed(() => hasAnyRole('MANAGER'))
 
+const statusForModal = computed(() => {
+  if (props.column.title === 'В процессе') return 'IN_PROGRESS';
+  if (props.column.title === 'Готово') return 'DONE';
+  return 'NEW';
+})
+
 function openCreateTaskModal() {
-  showCreateModal.value = true
+  showCreateModal.value = true;
 }
+
 function closeCreateTaskModal() {
   showCreateModal.value = false
 }
+
 function handleTaskCreated() {
   showCreateModal.value = false
   // Можно добавить emit('taskCreated') если нужно обновить родителя

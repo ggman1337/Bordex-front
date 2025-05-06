@@ -9,11 +9,13 @@ import { onMounted, computed } from 'vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BoardList from '@/components/boards/BoardList.vue'
 import { useBoardStore } from '@/stores/boardStore'
+import { useUserStore } from '@/stores/userStore'
 
 const boardStore = useBoardStore()
+const userStore = useUserStore()
 
 onMounted(() => {
-  boardStore.fetchBoards()
+  boardStore.fetchBoards(userStore.id)
 })
 
 const boards = computed(() => boardStore.allBoards)
