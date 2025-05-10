@@ -8,7 +8,7 @@
           <svg class="ml-1 w-4 h-4 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-[180px]">
+      <DropdownMenuContent class="min-w-[180px] max-h-[220px] overflow-y-auto custom-scroll">
         <div v-for="role in allRoles" :key="role">
           <label class="flex items-center gap-2 px-2 py-1 cursor-pointer">
             <input type="checkbox" :checked="roles.includes(role)" :disabled="loading" @change="toggleRole(role)" />
@@ -53,5 +53,20 @@ button {
 }
 input[type="checkbox"] {
   accent-color: #2563eb;
+}
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #2563eb #f3f4f6;
+}
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
 }
 </style>

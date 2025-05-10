@@ -15,7 +15,9 @@ const taskStore = useTaskStore()
 const userStore = useUserStore()
 
 onMounted(() => {
-  taskStore.connectUserTasks(userStore.id)
+  if (userStore.id && userStore.id !== 0) {
+    taskStore.connectUserTasks(userStore.id)
+  }
 })
 onBeforeUnmount(() => {
   taskStore.disconnectUserTasks()

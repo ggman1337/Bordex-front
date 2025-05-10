@@ -73,15 +73,17 @@ export const useTaskStore = defineStore('task', () => {
   function onTaskUpdate(payload: any) {
     const raw = JSON.parse(payload.body)
     const task = mapTask(raw)
-    // удаляем задачу из всех колонок
+    // Обновляем задачу во всех колонках, если она там есть
     columns.value.forEach((col: BoardColumn) => {
-      col.tasks = col.tasks.filter((t: BoardTask) => t.id !== task.id)
+      const idx = col.tasks.findIndex((t: BoardTask) => t.id === task.id)
+      if (idx !== -1) {
+        col.tasks[idx] = task
+      }
     })
-    // добавляем в нужную колонку, если её там ещё нет
+    // Если задача сменила статус и её нет в новой колонке — добавить
     const newCol = columns.value.find(c => (task.status === 'NEW' ? 1 : task.status === 'IN_PROGRESS' ? 2 : 3) === c.id)
     if (newCol && !newCol.tasks.some(t => t.id === task.id)) {
       newCol.tasks.push(task)
-      // сортировка по id (можно заменить на другое поле)
       newCol.tasks.sort((a, b) => a.id - b.id)
     }
   }

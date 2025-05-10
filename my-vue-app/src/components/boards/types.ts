@@ -138,12 +138,38 @@ export const tagValues: TagValue[] = [
   'PARTNER_INTEGRATION'
 ];
 
+export enum Status {
+  NEW = 'NEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  REVIEW = 'REVIEW',
+  DONE = 'DONE',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+  ON_HOLD = 'ON_HOLD',
+  WAITING_FOR_INPUT = 'WAITING_FOR_INPUT',
+  SCHEDULED = 'SCHEDULED',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  DEPLOYED = 'DEPLOYED',
+  TESTING = 'TESTING',
+  ARCHIVED = 'ARCHIVED',
+  QUEUED = 'QUEUED',
+  DELAYED = 'DELAYED',
+  NEEDS_APPROVAL = 'NEEDS_APPROVAL',
+  IN_REVIEW = 'IN_REVIEW',
+  VALIDATING = 'VALIDATING',
+  IMPLEMENTING = 'IMPLEMENTING',
+  BLOCKED = 'BLOCKED',
+  CLOSED = 'CLOSED',
+  OPEN = 'OPEN',
+}
+
 export interface Task {
   id: number;
   boardId: number; // ID of the board this task belongs to
   name: string;
   description?: string;
-  status: 'NEW' | 'IN_PROGRESS' | 'DONE';
+  status: Status;
   tag: { value: TagValue; label: string; color: string };
   assignees?: User[];
   priority?: string;
@@ -154,6 +180,7 @@ export interface Task {
 export interface BoardColumn {
   id: number;
   title: string;
+  status: Status;
   tasks: Task[];
 }
 

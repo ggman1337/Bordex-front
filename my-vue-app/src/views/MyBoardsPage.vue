@@ -15,10 +15,15 @@ const boardStore = useBoardStore()
 const userStore = useUserStore()
 
 onMounted(() => {
-  boardStore.fetchBoards(userStore.id)
+  if (userStore.id && userStore.id !== 0) {
+    boardStore.fetchBoards(userStore.id)
+  }
 })
 
-const boards = computed(() => boardStore.allBoards)
+const boards = computed(() => {
+  if (!userStore.id || userStore.id === 0) return [];
+  return boardStore.allBoards;
+})
 </script>
 
 <style scoped>

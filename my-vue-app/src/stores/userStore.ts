@@ -17,6 +17,7 @@ export interface User {
 
 import type { BoardRole } from '@/constants/boardRoles'
 import { fetchUserBoardRoles, fetchAllUserBoardRoles } from '@/api/boardRoles'
+import { apiFetch } from '@/api/apiFetch'
 import { subscribeBoardRolesRealtimeRaw } from '@/composables/useBoardRolesRealtime'
 
 export interface UserState {
@@ -33,7 +34,7 @@ export interface UserState {
 }
 
 export const useUserStore = defineStore('user', {
-  state: (): UserState & { _rolesUnsubscribers: Record<number, () => void> } => ({
+  state: (): UserState & { _rolesUnsubscribers: Record<number, () => void>; boardRolesCache: Record<number, any[]> } => ({
     id: 0,
     username: '',
     firstName: '',
@@ -44,7 +45,8 @@ export const useUserStore = defineStore('user', {
     userBoardRoles: {}, // boardId -> roles
     boards: [],
     userLoaded: false, // был ли загружен пользователь
-    _rolesUnsubscribers: {}
+    _rolesUnsubscribers: {},
+    boardRolesCache: {}, // boardId -> rolesList
   }),
   getters: {
     getUserById: (state: UserState) => (id: number) => state.users.find((u: User) => u.id === id)
@@ -80,7 +82,9 @@ export const useUserStore = defineStore('user', {
         boardId,
         async () => {
           await this.fetchUserBoardRoles(boardId)
-          await this.fetchUsersFromBoard(boardId) // <-- обновляем список пользователей после изменения ролей
+          // Сбросить кэш ролей и форсировать загрузку свежих ролей для всех пользователей
+          this.boardRolesCache[boardId] = undefined;
+          await this.fetchUsersFromBoard(boardId, true)
         },
         async () => {
           await this.fetchUserBoardRoles(boardId)
@@ -121,23 +125,25 @@ export const useUserStore = defineStore('user', {
         this.lastName = data.lastName
         this.email = data.email
         this.boards = (data.userBoardRoles || []).map((ubr: any) => ubr.board)
+        this.userLoaded = true
+        // Подключаем WebSocket после успешного получения пользователя
+        connectWebSocket()
       } catch (e) {
-        // Только сбрасываем локальные данные пользователя, но НЕ вызываем logout и не делаем запрос на сервер
+        // Сброс всех пользовательских данных при неавторизованности
         this.id = 0
         this.username = ''
         this.firstName = ''
         this.lastName = ''
         this.email = ''
+        this.userBoardRoles = {}
+        this.boards = []
+        this.userLoaded = true
         console.error('Failed to fetch current user', e)
       } finally {
         this.userLoaded = true;
       }
       // Подключаем WebSocket после успешного получения пользователя
       connectWebSocket()
-      // После успешного получения пользователя пробуем подписаться на все роли (если id есть)
-      if (this.id) {
-        await this.fetchAllUserBoardRoles()
-      }
     },
     async fetchUsers() {
       try {
@@ -156,32 +162,46 @@ export const useUserStore = defineStore('user', {
         console.error('Failed to fetch users', e)
       }
     },
-    async fetchUsersFromBoard(boardId: number) {
+    async fetchUsersFromBoard(boardId: number, force = false) {
       try {
-        const res = await fetch(`${baseUrl}/api/users?boardIds=${boardId}&page=0&size=200`)
+        // Если уже есть пользователи для этой доски и не force — не делаем запрос
+        if (this.boardUsers[boardId] && this.boardUsers[boardId].length > 0 && !force) {
+          return
+        }
+        // 1. Получаем пользователей доски
+        const res = await apiFetch(`${baseUrl}/api/users?boardIds=${boardId}&page=0&size=200`)
         const data: any = await res.json()
-        this.boardUsers[boardId] = (data.content || []).map((u: any) => {
-          // Собираем boardRoles в объект user.boardRoles[boardId]
-          let boardRolesMap: Record<number, string[]> = {}
-          if (Array.isArray(u.userBoardRoles)) {
-            for (const entry of u.userBoardRoles) {
-              if (entry.board && entry.board.id && Array.isArray(entry.boardRoles)) {
-                boardRolesMap[entry.board.id] = entry.boardRoles
-              }
-            }
-          }
+        const usersRaw = data.content || [];
+
+        // 2. Получаем (или используем из кэша) роли пользователей на доске
+        let rolesList = this.boardRolesCache[boardId];
+        // Если force=true, всегда сбрасываем кэш и делаем новый запрос
+        if (!rolesList || force) {
+          const rolesRes = await apiFetch(`${baseUrl}/api/users/boards/roles?boardId=${boardId}&page=0&size=200`)
+          const rolesData: any = await rolesRes.json()
+          rolesList = Array.isArray(rolesData.content) ? rolesData.content : [];
+          this.boardRolesCache[boardId] = rolesList;
+        }
+
+        // 3. Мержим роли в объекты пользователей
+        const newUsers = usersRaw.map((u: any) => {
+          const roleEntry = rolesList.find((r: any) => r.user && r.user.id === u.id)
+          // Создаем всегда новый объект пользователя (новая ссылка)
           return {
             id: u.id,
             username: u.username,
             firstName: u.firstName,
             lastName: u.lastName,
             email: u.email,
-            roles: u.roles || [],
-            boardRoles: boardRolesMap
+            roles: u.roles ? [...u.roles] : [],
+            boardRoles: {
+              [boardId]: roleEntry && Array.isArray(roleEntry.boardRoles) ? [...roleEntry.boardRoles] : []
+            }
           }
         })
+        this.boardUsers[boardId] = newUsers
       } catch (e) {
-        console.error('Failed to fetch users', e)
+        console.error('Failed to fetch users or roles', e)
       }
     },
     async logout() {

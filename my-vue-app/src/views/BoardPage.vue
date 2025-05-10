@@ -154,6 +154,8 @@ onMounted(async () => {
     await userStore.fetchCurrentUser()
     isUserLoading.value = false
   }
+  // Не загружать данные доски/задач, если пользователь не авторизован
+  if (!userStore.id || userStore.id === 0) return;
 })
 
 const boardName = computed(() => {
@@ -218,7 +220,7 @@ function openEditTaskForm(task: BoardTask) {
   modalPriority.value = task.priority as any
   modalTag.value = task.tag.value
   modalDeadline.value = task.deadline ? parseDate(task.deadline.slice(0, 10)) : undefined
-  modalProgress.value = task.progress
+  modalProgress.value = task.progress ?? 0
   showTaskModal.value = true
 }
 
@@ -303,11 +305,22 @@ async function loadData(id: number) {
     if (taskToEdit) openEditTaskForm(taskToEdit)
   }
 }
-onMounted(() => loadData(boardId.value))
-watch(boardId, (newId, oldId) => {
-  if (newId !== oldId) loadData(newId)
+
+onMounted(() => {
+  userStore.subscribeBoardRolesRealtime(boardId.value)
+  loadData(boardId.value)
 })
-onBeforeUnmount(() => taskStore.disconnect())
+watch(boardId, (newId, oldId) => {
+  if (newId !== oldId) {
+    if (userStore._rolesUnsubscribers[oldId]) userStore._rolesUnsubscribers[oldId]()
+    userStore.subscribeBoardRolesRealtime(newId)
+    loadData(newId)
+  }
+})
+onBeforeUnmount(() => {
+  if (userStore._rolesUnsubscribers[boardId.value]) userStore._rolesUnsubscribers[boardId.value]()
+  taskStore.disconnect()
+})
 
 </script>
 

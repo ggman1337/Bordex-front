@@ -40,6 +40,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Avatar } from '@/components/ui/avatar'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import { useUserStore } from '@/stores/userStore'
+import { apiFetch } from '@/api/apiFetch'
 
 const deletingMap = ref<Record<number, boolean>>({})
 
@@ -103,7 +104,7 @@ async function fetchNotifications() {
   loading.value = true
   error.value = ''
   try {
-    const response = await fetch('http://localhost:8080/api/notifications?page=0&size=20&sort=id,desc')
+    const response = await apiFetch('http://localhost:8080/api/notifications?page=0&size=20&sort=id,desc')
     if (!response.ok) throw new Error('Ошибка загрузки уведомлений')
     const data = await response.json()
     notifications.value = Array.isArray(data.content) ? data.content.map((n: any) => ({

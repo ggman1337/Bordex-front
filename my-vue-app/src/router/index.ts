@@ -50,8 +50,23 @@ router.beforeEach(async (to, from, next) => {
   // Проверяем, если пользователь не авторизован (id === 0)
   // и не переходит на login/register
   const publicPages = ['Login', 'Register'];
-  if (userStore.id === 0 && !publicPages.includes(to.name as string)) {
-    return next({ name: 'Register' });
+  const isPublic = publicPages.includes(to.name as string);
+  // Если пользователь не авторизован и пытается попасть на защищённую страницу — редиректим на регистрацию
+  // Исключаем бесконечный редирект: если уже на /register, /login или /settings — не редиректим
+  const safePages = ['Login', 'Register', 'Settings'];
+  const isSafe = safePages.includes(to.name as string);
+  if (userStore.id === 0 && !isSafe) {
+    if (from.name !== 'Register') {
+      return next({ name: 'Register' });
+    } else {
+      // Если уже на регистрации — разрешаем
+      return next();
+    }
+  }
+  // Только для защищённых маршрутов (не login/register) — загружаем роли по всем доскам
+  // Но только если пользователь авторизован (id !== 0)
+  if (!isPublic && userStore.id && userStore.id !== 0) {
+    await userStore.fetchAllUserBoardRoles();
   }
   // Проверяем доступ к настройкам доски (только MANAGER)
   if (to.name === 'BoardSettings') {

@@ -1,6 +1,6 @@
 <template>
   <MainLayout>
-    <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
+    <div v-if="userStore.id && userStore.id !== 0" class="px-6 py-2 dark:bg-dark-800 text-foreground">
         <h1 class="text-3xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Настройки</h1>
       <div class="flex flex-col md:flex-row gap-8 w-full h-full p-6 bg-gray-100 dark:bg-[#181b20] min-h-screen shadow-md rounded-2xl">
         <div class="w-full md:w-1/4 mb-6 md:mb-0">
@@ -85,6 +85,8 @@ import { Switch } from '@/components/ui/switch'
 import Slider from '@/components/ui/slider/Slider.vue'
 import { Settings as SettingsIcon, Bell, Home, Languages } from 'lucide-vue-next'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import { useUserStore } from '@/stores/userStore'
+const userStore = useUserStore()
 
 const activeTab = ref('general')
 

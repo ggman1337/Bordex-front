@@ -196,7 +196,16 @@ watch(() => props.task.boardId, (id) => {
 // check if current user is assigned to the task
 const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
 
-// Получение списка пользователей для назначения
+// Следим за изменениями boardUsers для этой задачи
+watch(
+  () => userStore.boardUsers[props.task.boardId],
+  (newVal) => {
+    console.log('TaskCard.vue: boardUsers changed for task', props.task.id, newVal)
+  },
+  { deep: true }
+)
+
+// Получение списка пользователей для назначения (рабочая логика)
 const usersForAssignment = computed<User[]>(() => {
   if (!isBoardView.value && !isNaN(props.task.boardId)) {
     // Только для MyTasksPage используем локальный список
@@ -209,10 +218,13 @@ const usersForAssignment = computed<User[]>(() => {
   }
 })
 
+
 // Список пользователей, которым задача еще не назначена
 // Получить роль пользователя на доске
-function getUserBoardRole(user) {
-  const boardRoles = user.boardRoles?.[props.task?.boardId ?? boardId] || []
+function getUserBoardRole(user: User) {
+  // Берём пользователя из userStore.boardUsers, чтобы всегда получать актуальные boardRoles
+  const freshUser = userStore.boardUsers[props.task.boardId]?.find(u => u.id === user.id)
+  const boardRoles = freshUser?.boardRoles?.[props.task.boardId] || []
   return Array.isArray(boardRoles) ? boardRoles : []
 }
 
