@@ -344,4 +344,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.dark .modal-settings-container {
+  background: #23272f !important;
+}
 </style>
