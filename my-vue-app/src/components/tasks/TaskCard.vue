@@ -175,7 +175,6 @@ if (!isBoardView.value) {
   watch(
     () => props.task.boardId,
     async (id) => {
-      console.log('TaskCard [MyTasksPage] boardId changed', { id: props.task.id, boardId: id, name: props.task.name })
       if (!isNaN(id)) {
         await userStore.fetchUsersFromBoard(id)
         boardUsersLocal.value = userStore.boardUsers[id] || []
@@ -198,7 +197,6 @@ const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userSto
 watch(
   () => userStore.boardUsers[props.task.boardId],
   (newVal) => {
-    console.log('TaskCard.vue: boardUsers changed for task', props.task.id, newVal)
   },
   { deep: true }
 )
@@ -242,28 +240,17 @@ const priorityLabel: Record<string, string> = {
   LOW: 'Не важно',
 }
 
-// Refresh tasks list based on context (board or My Tasks)
-async function refreshTasks() {
-  if (isBoardView.value) {
-    await taskStore.fetchTasks(boardId)
-  } else {
-    await taskStore.fetchTasksForUser(userStore.id)
-  }
-}
-
 // назначить указанного пользователя к задаче и обновить список
 async function assignToUser(user: User) {
   if (!isBoardView.value) {
     await userStore.fetchUsers() // всегда получаем актуальный список
   }
   await taskStore.assignUser(props.task.id, user.id)
-  await refreshTasks()
 }
 
 // отменить назначение указанного пользователя к задаче и обновить список
 async function unassignUser(user: User) {
   await taskStore.unassignUser(props.task.id, user.id)
-  await refreshTasks()
 }
 
 // edit modal handlers
@@ -276,7 +263,6 @@ function closeEditModal() {
 }
 
 async function onUpdated() {
-  await refreshTasks()
 }
 
 // delete modal handlers
@@ -290,7 +276,6 @@ function closeDeleteModal() {
 
 async function onDeleted() {
   handleDelete()
-  await refreshTasks()
 }
 
 const visible = ref(true)
@@ -317,15 +302,9 @@ watch(
       userStore.fetchUserBoardRoles(id)
     }
     // Диагностика: выводим boardId, роли и computed
-    console.log('TaskCard: props.task.boardId', props.task.boardId, 'route.params.id', route.params.id, 'effectiveBoardId', id)
-    console.log('TaskCard: userStore.userBoardRoles[id]', userStore.userBoardRoles[id])
   },
   { immediate: true }
 )
-
-watch(roles, (newRoles) => {
-  console.log('TaskCard: roles changed', newRoles)
-}, { immediate: true })
 
 function handleDelete() {
   visible.value = false

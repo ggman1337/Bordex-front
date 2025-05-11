@@ -174,11 +174,13 @@ const isUserLoading = ref(false)
 
 onMounted(async () => {
   if (!userStore.userLoaded) {
+    console.log("2")
     isUserLoading.value = true
     await userStore.fetchCurrentUser()
     isUserLoading.value = false
   }
   if (userStore.id && userStore.id !== 0) {
+    console.log("3")
     await userStore.fetchUserBoardRoles(boardId.value)
     userStore.subscribeBoardRolesRealtime(boardId.value)
     loadData(boardId.value)
@@ -299,6 +301,7 @@ async function assignToUser(task: BoardTask, user: User) {
 
 // Load boards and tasks, and subscribe via WebSocket when boardId changes
 async function loadData(id: number) {
+  console.log("4")
   // очистить предыдущие задачи сразу при смене доски
   taskStore.columns = []
   // загрузить доски
