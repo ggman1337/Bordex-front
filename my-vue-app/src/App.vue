@@ -1,11 +1,22 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { clearUnknownCookies } from '@/utils/cookies'
 import { useColorMode } from '@vueuse/core'
 import { Toaster } from 'vue-sonner'
+import { useBoardStore } from '@/stores/boardStore'
+import { useUserStore } from '@/stores/userStore'
 
-onMounted(() => {
+const boardStore = useBoardStore()
+const userStore = useUserStore()
+
+onMounted(async () => {
   clearUnknownCookies()
+  if (!userStore.userLoaded) await userStore.fetchCurrentUser()
+  if (userStore.id) await boardStore.connectUserBoardRealtime(userStore.id)
+})
+
+onBeforeUnmount(() => {
+  if (userStore.id) boardStore.disconnectUserBoardRealtime(userStore.id)
 })
 
 // Apply 'dark' class on <html> based on system or saved preference

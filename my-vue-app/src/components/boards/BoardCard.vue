@@ -2,7 +2,7 @@
   <div class="relative bg-card text-card-foreground rounded-xl shadow p-5 flex flex-col min-w-[10rem] max-w-[20rem]" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
     <div class="flex-1">
       <div class="flex items-center justify-between mb-2">
-        <div class="font-semibold text-lg" v-html="board.title"></div>
+        <div class="font-semibold text-lg" v-html="board.title || 'Без названия'"></div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button class="text-muted-foreground hover:text-foreground text-xl -mt-2"><span>...</span></button>

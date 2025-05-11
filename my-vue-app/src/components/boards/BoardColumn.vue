@@ -2,7 +2,7 @@
   <div
     class="flex flex-col rounded-xl p-4 min-w-[320px] max-w-[340px] w-full bg-card text-card-foreground"
     @dragover.prevent
-    @drop="onDrop"
+    @drop.prevent="onDrop($event, column.status)"
   >
     <div class="bg-task text-task-foreground flex items-center mb-4">
       <span class="font-semibold text-lg flex-1">{{ column.title }}</span>
@@ -12,18 +12,24 @@
         @click="openCreateTaskModal"
       >+</button>
     </div>
-    <transition-group name="task-fade" tag="div" class="flex flex-col">
-      <template v-for="(task, idx) in column.tasks" :key="task.id">
+    <transition-group
+      name="task-fade"
+      tag="div"
+      class="flex flex-col min-h-[100px]"
+    >
+      <div
+        v-for="(task, idx) in column.tasks"
+        :key="task.id"
+        draggable="true"
+        @dragstart="(e) => onDragStart(e, task)"
+        :style="{ marginBottom: idx !== column.tasks.length - 1 ? '16px' : '0' }"
+      >
         <TaskCard
-          v-if="task"
           :task="task"
-          :style="{ marginBottom: idx !== column.tasks.length - 1 ? '16px' : '0' }"
-          draggable="true"
-          @dragstart="(event: globalThis.DragEvent) => onDragStart(task, event)"
           @updateTask="emit('updateTask', $event)"
           @deleteTask="emit('deleteTask', $event)"
         />
-      </template>
+      </div>
     </transition-group>
   </div>
   <template v-if="showCreateModal">
@@ -32,17 +38,19 @@
 </template>
 
 <script setup lang="ts">
+
 import TaskCard from '../tasks/TaskCard.vue'
 import TaskModal from '../tasks/TaskModal.vue'
 import type { BoardColumn, Task } from './types.ts'
 import type { User } from '@/stores/userStore'
 import { ref, computed } from 'vue'
+import { Status } from '@/components/boards/types'
 import { useBoardRoles } from '@/composables/useBoardRoles'
 
 const props = defineProps<{ column: BoardColumn, boardId: number }>()
 const emit = defineEmits<{
-  (e: 'createTask', payload: { columnId: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }): void
-  (e: 'updateTask', task: Task | { id: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }): void
+  (e: 'createTask', payload: { columnId: number, status: Status }): void
+  (e: 'updateTask', payload: { id: number, status: Status }): void
   (e: 'deleteTask', task: Task): void
   (e: 'assignTask', userId: number): void
   (e: 'assignToUser', task: Task, user: User): void
@@ -50,15 +58,15 @@ const emit = defineEmits<{
 
 const showCreateModal = ref(false)
 
+const statusForModal = computed<Status>(() => {
+  if (props.column.title === 'В процессе') return Status.IN_PROGRESS;
+  if (props.column.title === 'Готово') return Status.DONE;
+  return Status.NEW;
+})
+
 // Проверка ролей: создавать задачи могут только DEVELOPER или MANAGER
 const { hasAnyRole } = useBoardRoles(props.boardId)
 const canCreateTask = computed(() => hasAnyRole('MANAGER'))
-
-const statusForModal = computed(() => {
-  if (props.column.title === 'В процессе') return 'IN_PROGRESS';
-  if (props.column.title === 'Готово') return 'DONE';
-  return 'NEW';
-})
 
 function openCreateTaskModal() {
   showCreateModal.value = true;
@@ -73,19 +81,17 @@ function handleTaskCreated() {
   // Можно добавить emit('taskCreated') если нужно обновить родителя
 }
 
-function onDragStart(task: Task, event: globalThis.DragEvent) {
-  event.dataTransfer?.setData('taskId', String(task.id))
+// Drag-and-drop handlers
+function onDragStart(e: DragEvent, task: Task) {
+  e.dataTransfer?.setData('taskId', task.id.toString());
 }
 
-function onDrop(event: globalThis.DragEvent) {
-  const taskId = event.dataTransfer?.getData('taskId')
-  if (taskId) {
-    let status: 'NEW' | 'IN_PROGRESS' | 'DONE' = 'NEW';
-    if (props.column.title === 'В процессе') status = 'IN_PROGRESS';
-    else if (props.column.title === 'Готово') status = 'DONE';
-    emit('updateTask', { id: Number(taskId), status })
-  }
+function onDrop(e: DragEvent, status: Status) {
+  e.preventDefault();
+  const id = Number(e.dataTransfer?.getData('taskId'));
+  emit('updateTask', { id, status });
 }
+
 </script>
 
 <style scoped>

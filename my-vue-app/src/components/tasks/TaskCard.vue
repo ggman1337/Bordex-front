@@ -1,14 +1,11 @@
 <template>
   <div>
     <transition name="task-collapse">
-      <div v-if="visible" class="bg-[var(--task)] text-[var(--task-foreground)] rounded-xl p-4 shadow flex flex-col gap-2 transition-all duration-200"
+      <div v-if="visible"
         :class="[
-          { 'border-l-4 border-[var(--border-primary)]': isAssigned },
-          isDragging ? 'z-20 shadow-2xl scale-105 opacity-80' : ''
+          'bg-[var(--task)] text-[var(--task-foreground)] rounded-xl p-4 shadow flex flex-col gap-2 transition-all duration-200',
+          { 'border-l-4 border-[var(--border-primary)]': isAssigned }
         ]"
-        @dragstart.self="onDragStart"
-        @dragend.self="onDragEnd"
-        :draggable="canEdit"
         v-bind="$attrs"
       >
         <div class="flex items-center justify-between mb-1">
@@ -127,6 +124,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTaskStore } from '@/stores/taskStore.ts'
 import { useRoute } from 'vue-router'
+
 import TaskModal from './TaskModal.vue'
 import TaskDeleteModal from './TaskDeleteModal.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
@@ -244,21 +242,6 @@ const priorityLabel: Record<string, string> = {
   LOW: 'Не важно',
 }
 
-const isDragging = ref(false)
-
-function onDragStart(e: DragEvent) {
-  if (!canEdit.value) {
-    e.preventDefault()
-    return
-  }
-  e.dataTransfer?.setData('taskId', String(props.task.id));
-  isDragging.value = true;
-}
-
-function onDragEnd(_: DragEvent) {
-  isDragging.value = false
-}
-
 // Refresh tasks list based on context (board or My Tasks)
 async function refreshTasks() {
   if (isBoardView.value) {
@@ -349,7 +332,9 @@ function handleDelete() {
   setTimeout(() => emit('deleteTask', props.task), 250)
 }
 
-const emit = defineEmits(['dragstart', 'updateTask', 'deleteTask', 'assignTask', 'assignToUser'])
+const emit = defineEmits(['updateTask', 'deleteTask', 'assignTask', 'assignToUser'])
+
+
 </script>
 
 <style scoped>

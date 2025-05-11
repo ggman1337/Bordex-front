@@ -57,7 +57,7 @@ export const useBoardStore = defineStore('board', {
       if (idx !== -1) {
         this.boards[idx] = {
           ...this.boards[idx],
-          title: updated.title || updated.name,
+          title: updated.name,
           description: updated.description,
           scope: updated.scope,
           owner: updated.owner,
@@ -67,7 +67,7 @@ export const useBoardStore = defineStore('board', {
       } else {
         this.boards.push({
           id: updated.id,
-          title: updated.title || updated.name,
+          title: updated.name,
           description: updated.description,
           scope: updated.scope,
           owner: updated.owner,
@@ -93,7 +93,7 @@ export const useBoardStore = defineStore('board', {
       if (idx !== -1) {
         this.boards[idx] = {
           ...this.boards[idx],
-          title: updated.title || updated.name,
+          title: updated.name,
           description: updated.description,
           scope: updated.scope,
           owner: updated.owner,
@@ -104,7 +104,7 @@ export const useBoardStore = defineStore('board', {
         // Новая доска — пушим в список
         this.boards.push({
           id: updated.id,
-          title: updated.title || updated.name,
+          title: updated.name,
           description: updated.description,
           scope: updated.scope,
           owner: updated.owner,
@@ -202,6 +202,10 @@ export const useBoardStore = defineStore('board', {
       try {
         await apiFetch(`${baseUrl}/api/boards/${id}`, { method: 'DELETE' })
         this.boards = this.boards.filter(b => b.id !== id)
+        if (this.currentBoardId === id) {
+          this.currentBoardId = null
+          if (typeof localStorage !== 'undefined') localStorage.removeItem('currentBoardId')
+        }
       } catch (e: any) {
         this.error = e.message
       }

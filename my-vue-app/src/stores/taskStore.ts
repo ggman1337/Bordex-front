@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { websocketConfig } from '@/config/websocket.config'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import type { Task as BoardTask, BoardColumn } from '@/components/boards/types'
+import { Status } from '@/components/boards/types'
 import { useUserStore } from '@/stores/userStore'
 import { apiFetch } from '@/api/apiFetch'
 
@@ -23,7 +23,7 @@ export const useTaskStore = defineStore('task', () => {
       boardId: t.board.id,
       name: t.name,
       description: t.description ?? '',
-      status: t.status as 'NEW' | 'IN_PROGRESS' | 'DONE',
+      status: t.status as Status,
       tag: { value: t.tag, label: t.tag, color: t.tagColor ?? '' },
       assignees: t.assignees ?? [],
       priority: t.priority ?? 'LOW',
@@ -38,10 +38,33 @@ export const useTaskStore = defineStore('task', () => {
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     const mapped: BoardTask[] = raw.map(mapTask)
     columns.value = [
-      { id: 1, title: 'Нужно сделать', tasks: mapped.filter((t: BoardTask) => t.status === 'NEW').sort((a, b) => a.id - b.id) },
-      { id: 2, title: 'В процессе', tasks: mapped.filter((t: BoardTask) => t.status === 'IN_PROGRESS').sort((a, b) => a.id - b.id) },
-      { id: 3, title: 'Готово', tasks: mapped.filter((t: BoardTask) => t.status === 'DONE').sort((a, b) => a.id - b.id) },
+      { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: mapped.filter((t: BoardTask) => t.status === Status.NEW).sort((a, b) => a.id - b.id) },
+      { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: mapped.filter((t: BoardTask) => t.status === Status.IN_PROGRESS).sort((a, b) => a.id - b.id) },
+      { id: 3, title: 'Готово', status: Status.DONE, tasks: mapped.filter((t: BoardTask) => t.status === Status.DONE).sort((a, b) => a.id - b.id) },
     ]
+  }
+
+  // Оптимистичное обновление статуса задачи локально
+  function optimisticUpdateTaskStatus(taskId: number, newStatus: Status) {
+    let movedTask: BoardTask | undefined;
+    for (const col of columns.value) {
+      const idx = col.tasks.findIndex(t => t.id === taskId)
+      if (idx !== -1) {
+        movedTask = { ...col.tasks[idx], status: newStatus };
+        col.tasks.splice(idx, 1);
+        break;
+      }
+    }
+    if (movedTask) {
+      let targetCol;
+      if (newStatus === Status.NEW) targetCol = columns.value[0];
+      else if (newStatus === Status.IN_PROGRESS) targetCol = columns.value[1];
+      else if (newStatus === Status.DONE) targetCol = columns.value[2];
+      if (targetCol) {
+        targetCol.tasks.push(movedTask);
+        targetCol.tasks.sort((a, b) => a.id - b.id);
+      }
+    }
   }
 
   async function fetchTasksForUser(userId: number, page = 0, size = 200) {
@@ -73,25 +96,22 @@ export const useTaskStore = defineStore('task', () => {
   function onTaskUpdate(payload: any) {
     const raw = JSON.parse(payload.body)
     const task = mapTask(raw)
-    // Обновляем задачу во всех колонках, если она там есть
+    // Удаляем задачу из всех колонок
     columns.value.forEach((col: BoardColumn) => {
-      const idx = col.tasks.findIndex((t: BoardTask) => t.id === task.id)
-      if (idx !== -1) {
-        col.tasks[idx] = task
-      }
+      col.tasks = col.tasks.filter((t: BoardTask) => t.id !== task.id)
     })
-    // Если задача сменила статус и её нет в новой колонке — добавить
-    const newCol = columns.value.find(c => (task.status === 'NEW' ? 1 : task.status === 'IN_PROGRESS' ? 2 : 3) === c.id)
-    if (newCol && !newCol.tasks.some(t => t.id === task.id)) {
-      newCol.tasks.push(task)
-      newCol.tasks.sort((a, b) => a.id - b.id)
+    // Вставляем/обновляем задачу в колонке по статусу
+    const targetCol = columns.value.find(c => c.status === task.status)
+    if (targetCol) {
+      targetCol.tasks.push(task)
+      targetCol.tasks.sort((a, b) => a.id - b.id)
     }
   }
 
   async function createTask(boardId: number, taskData: {
     name: string
     description: string
-    status: 'NEW' | 'IN_PROGRESS' | 'DONE'
+    status: Status
     priority: 'LOW' | 'MEDIUM' | 'HIGH'
     tag: string
     deadline?: string | null
@@ -108,7 +128,7 @@ export const useTaskStore = defineStore('task', () => {
         tag: taskData.tag,
         deadline: taskData.deadline ?? null,
         progress: taskData.progress ?? 0,
-    })
+      })
     })
     // refresh task list
     fetchTasks(boardId)
@@ -119,7 +139,7 @@ export const useTaskStore = defineStore('task', () => {
     taskData: Partial<{
       name: string
       description: string
-      status: 'NEW' | 'IN_PROGRESS' | 'DONE'
+      status: Status
       priority: 'LOW' | 'MEDIUM' | 'HIGH'
       tag: string
       deadline?: string | null
@@ -191,6 +211,7 @@ export const useTaskStore = defineStore('task', () => {
   return {
     columns,
     userTasks,
+    optimisticUpdateTaskStatus,
     fetchTasks,
     fetchTasksForUser,
     connect,

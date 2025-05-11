@@ -25,9 +25,9 @@
             <label>
               <span class="text-sm font-semibold dark:text-dark-200">Статус</span>
               <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
-                <option value="NEW">Нужно сделать</option>
-                <option value="IN_PROGRESS">В процессе</option>
-                <option value="DONE">Готово</option>
+                <option :value="Status.NEW">Нужно сделать</option>
+                <option :value="Status.IN_PROGRESS">В процессе</option>
+                <option :value="Status.DONE">Готово</option>
               </select>
             </label>
             <label v-if="isManager || !isEditMode">
@@ -104,13 +104,14 @@ const isManager = computed(() => roles.value.includes('MANAGER'))
 const isDeveloper = computed(() => roles.value.includes('DEVELOPER'))
 const isEditMode = computed(() => !!props.task && !!props.task.id)
 
-const props = defineProps<{ task?: BoardTask, boardId?: number, status?: 'NEW' | 'IN_PROGRESS' | 'DONE' }>()
+import { Status } from '@/components/boards/types'
+const props = defineProps<{ task?: BoardTask, boardId?: number, status?: Status }>()
 const emit = defineEmits(['close', 'updated'])
 
 const taskStore = useTaskStore()
 const modalTitle = ref(props.task?.name ?? '')
 const modalDescription = ref(props.task?.description ?? '')
-const modalStatus = ref(props.task?.status ?? props.status ?? 'NEW')
+const modalStatus = ref<Status>(props.task?.status ?? props.status ?? Status.NEW)
 const modalPriority = ref((props.task?.priority as any) ?? 'LOW')
 const modalTag = ref<TagValue>(props.task?.tag?.value ?? tagValues[0])
 const modalDeadline = ref(props.task?.deadline ? parseDate(props.task.deadline.slice(0, 10)) : undefined)
@@ -122,7 +123,7 @@ watch(
     if (!t) return
     modalTitle.value = t.name
     modalDescription.value = t.description ?? ''
-    modalStatus.value = t.status
+    modalStatus.value = t.status as Status
     modalPriority.value = (t.priority as any) ?? 'LOW'
     modalTag.value = t.tag.value
     modalDeadline.value = t.deadline ? parseDate(t.deadline.slice(0, 10)) : undefined
@@ -134,7 +135,7 @@ watch(
   () => props.status,
   (s) => {
     if (!isEditMode.value && s) {
-      modalStatus.value = s
+      modalStatus.value = s as Status
     }
   },
   { immediate: true }

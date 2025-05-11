@@ -11,6 +11,7 @@
           Настройки
         </button>
       </div>
+      
       <div class="flex gap-6 overflow-x-auto">
         <BoardColumn
           v-for="col in columns"
@@ -18,11 +19,12 @@
           :column="col"
           :board-id="boardId"
           @createTask="openNewTaskForm"
-          @updateTask="onTaskUpdate"
           @deleteTask="openDeleteModal"
           @assignToUser="assignToUser"
+          @updateTask="onUpdateTask"
         />
       </div>
+    
       <teleport to="body">
         <div v-if="showSettingsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-lg relative dark:bg-[#23272f]">
@@ -103,13 +105,20 @@
           </Card>
         </div>
       </teleport>
-      <TaskModal v-if="showTaskModal && editTask" :task="editTask!" @close="closeTaskModal" @updated="onModalUpdated" />
+      <teleport to="body" v-if="showTaskModal && editTask">
+        <TaskModal
+          :task="editTask!"
+          @close="closeTaskModal"
+          @updated="onModalUpdated"
+        />
+      </teleport>
       <TaskDeleteModal v-if="showDeleteModal" :task="selectedDeleteTask!" @close="closeDeleteModal" @deleted="onDeleted" />
     </div>
   </MainLayout>
 </template>
 
 <script setup lang="ts">
+
 import MainLayout from '@/components/layout/MainLayout.vue'
 import BoardColumn from '@/components/boards/BoardColumn.vue'
 import Card from '@/components/ui/card/Card.vue'
@@ -140,6 +149,7 @@ import TaskModal from '@/components/tasks/TaskModal.vue'
 import TaskDeleteModal from '@/components/tasks/TaskDeleteModal.vue'
 import BoardSettingsForm from '@/components/settings/BoardSettingsForm.vue'
 import { Settings } from 'lucide-vue-next'
+import { Status } from '@/components/boards/types'
 
 const route = useRoute()
 const boardId = computed(() => Number(route.params.id))
@@ -154,12 +164,17 @@ onMounted(async () => {
     await userStore.fetchCurrentUser()
     isUserLoading.value = false
   }
-  // Не загружать данные доски/задач, если пользователь не авторизован
-  if (!userStore.id || userStore.id === 0) return;
+  if (userStore.id && userStore.id !== 0) {
+    await userStore.fetchUserBoardRoles(boardId.value)
+    userStore.subscribeBoardRolesRealtime(boardId.value)
+    loadData(boardId.value)
+  } else {
+    return
+  }
 })
 
 const boardName = computed(() => {
-  return userStore.boards.find(b => b.id === boardId.value)?.name || 'Без названия'
+  return boardStore.boards.find(b => b.id === boardId.value)?.title || 'Без названия'
 })
 
 const columns = computed(() => taskStore.columns)
@@ -170,7 +185,7 @@ const editTask = ref<BoardTask | null>(null)
 const selectedColumnId = ref<number | null>(null)
 const modalTitle = ref('')
 const modalDescription = ref('')
-const modalStatus = ref<'NEW' | 'IN_PROGRESS' | 'DONE'>('NEW')
+const modalStatus = ref<Status>(Status.NEW)
 const modalPriority = ref<'LOW' | 'MEDIUM' | 'HIGH'>('LOW')
 const modalTag = ref<TagValue>(tagValues[0])
 const modalDeadline = ref<DateValue | undefined>(undefined)
@@ -185,7 +200,7 @@ const selectedDeleteTask = ref<BoardTask | null>(null)
 const showSettingsModal = ref(false)
 
 // Открыть форму создания
-function openNewTaskForm({ columnId, status }: { columnId: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }) {
+function openNewTaskForm({ columnId, status }: { columnId: number, status: Status }) {
   editTask.value = null
   selectedColumnId.value = columnId
   modalTitle.value = ''
@@ -196,18 +211,6 @@ function openNewTaskForm({ columnId, status }: { columnId: number, status: 'NEW'
   modalDeadline.value = undefined
   modalProgress.value = 0
   showTaskModal.value = true
-}
-
-// Drag&Drop: обработка смены статуса задачи
-async function onTaskUpdate(payload: BoardTask | { id: number, status: 'NEW' | 'IN_PROGRESS' | 'DONE' }) {
-  // Если это просто BoardTask, открыть редактор
-  if ('name' in payload) {
-    openEditTaskForm(payload as BoardTask)
-    return
-  }
-  // Если это drop: {id, status}
-  await taskStore.updateTask(payload.id, { status: payload.status })
-  // fetchTasks убран для избежания гонки с WebSocket
 }
 
 // Открыть форму редактирования
@@ -306,17 +309,26 @@ async function loadData(id: number) {
   }
 }
 
-onMounted(() => {
-  userStore.subscribeBoardRolesRealtime(boardId.value)
-  loadData(boardId.value)
-})
+// Update task status
+async function onUpdateTask({ id, status }: { id: number; status: Status }) {
+  // Сохраняем новый статус на сервере
+  await taskStore.updateTask(id, { status })
+  // Оптимистично обновляем локальные колонки
+  taskStore.optimisticUpdateTaskStatus(id, status)
+  // Перезагружаем задачи для текущего пользователя, чтобы синхронизироваться с сервером
+  await taskStore.fetchTasks(boardId.value)
+}
+
+// Перезагрузка при смене доски
 watch(boardId, (newId, oldId) => {
   if (newId !== oldId) {
-    if (userStore._rolesUnsubscribers[oldId]) userStore._rolesUnsubscribers[oldId]()
+    userStore._rolesUnsubscribers[oldId]?.()
+    userStore.fetchUserBoardRoles(newId)
     userStore.subscribeBoardRolesRealtime(newId)
     loadData(newId)
   }
 })
+
 onBeforeUnmount(() => {
   if (userStore._rolesUnsubscribers[boardId.value]) userStore._rolesUnsubscribers[boardId.value]()
   taskStore.disconnect()
