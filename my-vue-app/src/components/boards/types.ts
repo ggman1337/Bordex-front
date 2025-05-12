@@ -166,7 +166,7 @@ export enum Status {
 
 export interface Task {
   id: number;
-  boardId: number; // ID of the board this task belongs to
+  boardId: number;
   name: string;
   description?: string;
   status: Status;
@@ -174,7 +174,7 @@ export interface Task {
   assignees?: User[];
   priority?: string;
   deadline?: string | null;
-  progress?: number; // 0..100, процент выполнения задачи
+  progress?: number;
 }
 
 export interface BoardColumn {
@@ -188,7 +188,7 @@ export interface Board {
   id: number;
   title: string;
   description: string;
-  scope: string; // e.g., 'PRIVATE', 'PUBLIC'
+  scope: string;
   owner: {
     id: number;
     username: string;
@@ -198,4 +198,5 @@ export interface Board {
   };
   membersCount: number;
   tasksCount: number;
+  progress?: number;
 }

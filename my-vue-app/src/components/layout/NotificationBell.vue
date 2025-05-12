@@ -314,17 +314,14 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
-/* Dark theme notification item hover */
 .dark .notification-menu ul li:hover {
   background: #27272a;
 }
 
-/* Dark theme border */
 .dark .notification-menu ul li {
   border-color: #27272a;
 }
 
-/* Dark theme text */
 .dark .notification-menu ul li .text-gray-700 {
   color: #d1d5db;
 }
@@ -369,6 +366,10 @@ onBeforeUnmount(() => {
   color: #fff !important;
 }
 
+.dark .event-type-badge {
+  color: #fff !important;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8) !important;
+}
 .unread-notification {
   font-weight: bold;
   background: #fef2f2;

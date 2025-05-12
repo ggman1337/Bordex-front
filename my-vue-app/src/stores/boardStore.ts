@@ -63,6 +63,7 @@ export const useBoardStore = defineStore('board', {
           owner: updated.owner,
           membersCount: updated.membersCount ?? this.boards[idx].membersCount,
           tasksCount: updated.tasksCount ?? this.boards[idx].tasksCount,
+          progress: updated.progress ?? this.boards[idx].progress,
         }
       } else {
         this.boards.push({
@@ -73,6 +74,7 @@ export const useBoardStore = defineStore('board', {
           owner: updated.owner,
           membersCount: updated.membersCount ?? 0,
           tasksCount: updated.tasksCount ?? 0,
+          progress: updated.progress ?? 0,
         })
       }
     },
@@ -99,6 +101,7 @@ export const useBoardStore = defineStore('board', {
           owner: updated.owner,
           membersCount: updated.membersCount ?? this.boards[idx].membersCount,
           tasksCount: updated.tasksCount ?? this.boards[idx].tasksCount,
+          progress: updated.progress ?? this.boards[idx].progress,
         }
       } else {
         // Новая доска — пушим в список
@@ -110,6 +113,7 @@ export const useBoardStore = defineStore('board', {
           owner: updated.owner,
           membersCount: updated.membersCount ?? 0,
           tasksCount: updated.tasksCount ?? 0,
+          progress: updated.progress ?? 0,
         })
       }
     },
@@ -145,6 +149,7 @@ export const useBoardStore = defineStore('board', {
           owner: b.owner,
           membersCount: b.membersCount ?? 0,
           tasksCount: b.tasksCount ?? 0,
+          progress: b.progress ?? 0,
         }))
       } catch (e: any) {
         this.error = e.message

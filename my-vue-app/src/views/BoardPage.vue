@@ -2,8 +2,11 @@
   <MainLayout>
     <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
       <div class="flex items-center justify-between mb-4">
-        <h1 v-if="!isUserLoading" class="text-3xl font-semibold dark:text-dark-100">{{ boardName }}</h1>
-        <button
+        <h1 v-if="!isUserLoading" class="text-3xl font-semibold dark:text-dark-100">
+          {{ boardName }}
+          <span v-if="isManager" class="text-base font-normal text-muted-foreground ml-2">({{ boardProgress }}%)</span>
+        </h1>
+        <button v-if="isManager"
             class="flex items-center gap-2 bg-card text-card-foreground border border-border rounded px-3 py-1 shadow hover:bg-muted dark:bg-dark-700 dark:text-dark-100 dark:border-dark-300"
             @click="showSettingsModal = true"
         >
@@ -26,13 +29,14 @@
       </div>
 
       <teleport to="body">
-        <div v-if="showSettingsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div
-              class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-lg relative dark:bg-[#23272f]">
-            <button class="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-foreground"
-                    @click="showSettingsModal = false">×
-            </button>
-            <BoardSettingsForm :board-id="boardId"/>
+        <div v-if="isManager">
+          <div v-if="showSettingsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-4xl relative dark:bg-[#23272f]">
+              <button class="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-foreground"
+                      @click="showSettingsModal = false">×
+              </button>
+              <BoardSettingsForm :board-id="boardId"/>
+            </div>
           </div>
         </div>
       </teleport>
@@ -164,6 +168,8 @@ import TaskModal from '@/components/tasks/TaskModal.vue'
 import TaskDeleteModal from '@/components/tasks/TaskDeleteModal.vue'
 import BoardSettingsForm from '@/components/settings/BoardSettingsForm.vue'
 import {Status} from '@/components/boards/types'
+import {useBoardRoles} from "@/composables/useBoardRoles.ts";
+
 
 const route = useRoute()
 const boardId = computed(() => Number(route.params.id))
@@ -174,24 +180,22 @@ const isUserLoading = ref(false)
 
 onMounted(async () => {
   if (!userStore.userLoaded) {
-    console.log("2")
     isUserLoading.value = true
     await userStore.fetchCurrentUser()
     isUserLoading.value = false
   }
   if (userStore.id && userStore.id !== 0) {
-    console.log("3")
     await userStore.fetchUserBoardRoles(boardId.value)
     userStore.subscribeBoardRolesRealtime(boardId.value)
     loadData(boardId.value)
+    await boardStore.connectUserBoardRealtime(userStore.id)
   } else {
     return
   }
 })
 
-const boardName = computed(() => {
-  return boardStore.boards.find(b => b.id === boardId.value)?.title || 'Без названия'
-})
+const boardName = computed(() => boardStore.boards.find(b => b.id === boardId.value)?.title || 'Без названия')
+const boardProgress = computed(() => boardStore.boards.find(b => b.id === boardId.value)?.progress ?? 0)
 
 const columns = computed(() => taskStore.columns)
 
@@ -299,6 +303,9 @@ async function assignToUser(task: BoardTask, user: User) {
   await taskStore.assignUser(task.id, user.id)
 }
 
+const { hasRole } = useBoardRoles(boardId)
+const isManager = computed(() => hasRole('MANAGER'))
+
 // Load boards and tasks, and subscribe via WebSocket when boardId changes
 async function loadData(id: number) {
   console.log("4")
@@ -342,6 +349,8 @@ watch(boardId, (newId, oldId) => {
 onBeforeUnmount(() => {
   if (userStore._rolesUnsubscribers[boardId.value]) userStore._rolesUnsubscribers[boardId.value]()
   taskStore.disconnect()
+  // Отписаться от обновлений доски
+  boardStore.disconnectBoardRealtime(boardId.value)
 })
 
 </script>

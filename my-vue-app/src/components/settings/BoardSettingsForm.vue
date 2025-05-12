@@ -1,6 +1,5 @@
 <template>
-  <form class="flex flex-col gap-6 p-6 rounded-xl shadow-none">
-    <!-- Tabs -->
+  <form class="flex flex-col gap-6 p-6 rounded-xl shadow-none bg-white dark:bg-dark-800 text-black dark:text-dark-100">
     <div class="flex gap-2 mb-6">
       <button
           type="button"
@@ -18,10 +17,19 @@
       >
         Колонки доски
       </button>
+      <button
+          v-if="isOwner"
+          type="button"
+          class="px-4 py-2 rounded"
+          :class="activeTab === 'owner' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-700'"
+          @click="activeTab = 'owner'"
+      >
+        Сменить владельца/доступность
+      </button>
     </div>
-    <div v-if="activeTab === 'roles'" class="mb-6">
+    <div v-if="activeTab === 'roles'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
       <h2 class="text-xl font-semibold mb-2">Пользователи доски</h2>
-      <div class="user-table-scroll">
+      <div class="user-table-scroll bg-white dark:bg-dark-800 rounded-xl">
         <table class="w-full text-sm border-separate border-spacing-y-2">
           <thead>
           <tr>
@@ -29,6 +37,7 @@
             <th class="text-left text-muted-foreground">Логин</th>
             <th class="text-left text-muted-foreground">Email</th>
             <th class="text-left text-muted-foreground">Роли</th>
+            <th class="text-left text-muted-foreground">Действия</th>
           </tr>
           </thead>
           <tbody>
@@ -46,14 +55,43 @@
                   :loading="loadingUserId === user.id"
               />
             </td>
+            <td>
+              <button @click.prevent="removeUserFromBoard(user)"
+                      :disabled="removingUserId === user.id"
+                      class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                {{ removingUserId === user.id ? 'Удаление...' : 'Удалить' }}
+              </button>
+            </td>
           </tr>
           </tbody>
         </table>
       </div>
+      <div class="mt-4 flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl">
+        <h3 class="font-semibold">Добавить пользователя</h3>
+        <p v-if="duplicateMessage" class="text-red-500 dark:text-red-400">{{ duplicateMessage }}</p>
+        <div class="flex flex-row items-center gap-2">
+          <input v-model="newUserQuery" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
+                 maxlength="40"/>
+          <button @click.prevent="searchUsers" :disabled="searching" class="px-3 py-1 rounded border transition-colors bg-white text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
+            {{ searching ? 'Поиск...' : 'Поиск' }}
+          </button>
+        </div>
+        <div v-if="searchResults.length" class="mt-2 max-h-60 overflow-y-auto flex flex-col gap-2">
+          <div v-for="user in searchResults" :key="user.id" class="flex items-center justify-between p-2 bg-muted dark:bg-dark-700 rounded">
+            <span>{{ user.firstName }} {{ user.lastName }} ({{ user.username }} | {{ user.email }})</span>
+            <button @click.prevent="addUserToBoard(user)" :disabled="addingUserId === user.id" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+              {{ addingUserId === user.id ? 'Добавление...' : 'Добавить' }}
+            </button>
+          </div>
+        </div>
+        <div v-else-if="!searching && newUserQuery" class="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
+          Пользователи не найдены
+        </div>
+      </div>
     </div>
 
     <!-- Секция управления колонками -->
-    <div v-if="activeTab === 'columns'" class="mb-6">
+    <div v-if="activeTab === 'columns'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
       <h2 class="text-xl font-semibold mb-2">Колонки доски</h2>
       <div class="mb-2 flex flex-col gap-2">
         <div v-for="col in localColumns" :key="col.id"
@@ -73,6 +111,36 @@
       </button>
     </div>
 
+    <div v-if="activeTab === 'owner'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
+      <h2 class="text-xl font-semibold mb-2">Сменить владельца доски</h2>
+      <div class="flex-row items-center gap-2">
+        <select v-model="newOwnerId" class="mr-2 p-2 border border-gray-300 rounded bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+          <option :value="null" disabled class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">Выберите пользователя</option>
+          <option v-for="user in boardUsers.filter(u => u.id !== boardOwner?.id)" :key="user.id" :value="user.id"
+                  class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+            {{ user.firstName }} {{ user.lastName }} ({{ user.username }})
+          </option>
+        </select>
+        <button :disabled="!newOwnerId || transferringOwner" @click.prevent="transferOwner"
+                class="px-3 py-1 rounded border transition-colors bg-white text-green-700 border-green-600 hover:bg-green-50 dark:bg-green-800 dark:text-white dark:border-green-800 dark:hover:bg-green-700">
+          {{ transferringOwner ? 'Передача...' : 'Передать' }}
+        </button>
+      </div>
+      <div class="mt-4 bg-white dark:bg-dark-700 rounded-xl">
+        <label class="block text-sm font-semibold mb-1">Доступность доски</label>
+        <div class="flex-row items-center gap-2">
+          <select v-model="boardScope" class="mr-2 p-2 border border-gray-300 rounded bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+            <option value="PRIVATE" class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">PRIVATE</option>
+            <option value="PUBLIC" class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">PUBLIC</option>
+          </select>
+          <button :disabled="savingScope" @click.prevent="updateScope"
+                  class="px-3 py-1 rounded border transition-colors bg-white text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
+            {{ savingScope ? 'Сохраняем...' : 'Сохранить' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Модалка для создания/редактирования колонки -->
     <div v-if="showColumnModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-800 p-6 rounded-xl shadow-xl w-full max-w-xs relative">
@@ -81,20 +149,20 @@
         </button>
         <h3 class="text-lg font-semibold mb-2">{{ editingColumn ? 'Редактировать колонку' : 'Добавить колонку' }}</h3>
         <form @submit.prevent="saveColumn">
-          <div class="mb-3">
+          <div class="mb-6 bg-white dark:bg-dark-800 rounded-xl">
             <label class="block text-sm font-semibold mb-1">Название</label>
             <input v-model="columnForm.title"
-                   class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" required
+                   class="w-full p-2 border border-gray-300 rounded dark:bg-dark-600 dark:border-dark-600 dark:text-dark-100" required
                    maxlength="40"/>
           </div>
-          <div class="mb-3">
+          <div class="mb-6 bg-white dark:bg-dark-800 rounded-xl">
             <label class="block text-sm font-semibold mb-1">Статус</label>
             <select v-model="columnForm.status"
-                    class="w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100" required>
+                    class="w-full p-2 border border-gray-300 rounded dark:bg-dark-600 dark:border-dark-600 dark:text-dark-100" required>
               <option v-for="s in statusList" :key="s" :value="s">{{ s }}</option>
             </select>
           </div>
-          <button type="submit" class="w-full mt-2 px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">
+          <button type="submit" class="w-full mt-2 px-3 py-1 rounded border transition-colors bg-white text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
             Сохранить
           </button>
         </form>
@@ -104,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
+import {computed, ref, watch, onMounted} from 'vue'
 import {useUserStore} from '@/stores/userStore'
 import {BOARD_ROLES} from '@/constants/boardRoles'
 import RoleMenu from './RoleMenu.vue'
@@ -116,11 +184,68 @@ const userStore = useUserStore()
 const boardId = computed(() => props.boardId)
 const boardUsers = computed(() => userStore.boardUsers[boardId.value] || [])
 const allRoles = BOARD_ROLES
+const activeTab = ref<'roles' | 'columns' | 'owner'>('roles')
 
-// Tabs
-const activeTab = ref<'roles' | 'columns'>('roles')
+// Owner transfer logic
+const boardOwner = ref<any>(null)
+const newOwnerId = ref<number|null>(null)
+const transferringOwner = ref(false)
+const currentUserId = computed(() => userStore.id)
+const isOwner = computed(() => boardOwner.value?.id === currentUserId.value)
+const boardScope = ref<string>('PRIVATE')
+const savingScope = ref(false)
 
-// --- Колонки ---
+async function loadBoardDetails() {
+  try {
+    const res = await apiFetch(`http://localhost:8080/api/boards/${boardId.value}`)
+    const data = await res.json()
+    boardOwner.value = data.owner
+    boardScope.value = data.scope
+  } catch (e) {
+    console.error('Failed to load board details', e)
+  }
+}
+
+async function transferOwner() {
+  if (!newOwnerId.value) return
+  transferringOwner.value = true
+  try {
+    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/owner-transfer/${newOwnerId.value}`, {
+      method: 'PATCH'
+    })
+    await loadBoardDetails()
+    // Смена вкладки обратно после передачи владельца
+    activeTab.value = 'roles'
+  } catch (e) {
+    console.error('Failed to transfer owner', e)
+  } finally {
+    transferringOwner.value = false
+  }
+}
+
+async function updateScope() {
+  savingScope.value = true
+  try {
+    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({scope: boardScope.value})
+    })
+    await loadBoardDetails()
+  } catch (e) {
+    console.error('Failed to update scope', e)
+  } finally {
+    savingScope.value = false
+  }
+}
+
+onMounted(() => {
+  loadBoardDetails()
+})
+watch(boardId, () => {
+  loadBoardDetails()
+})
+
 const statusList = Object.values(Status)
 const localColumns = ref<BoardColumn[]>([
   {id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: []},
@@ -171,7 +296,6 @@ function deleteColumn(col: BoardColumn) {
   }
 }
 
-// --- Роли (оставляем как было) ---
 const userRoles = computed(() => {
   const map: Record<number, string[]> = {}
   const entries = userStore.boardRolesCache[boardId.value] || []
@@ -191,6 +315,68 @@ async function updateUserRoles({userId, roles}: { userId: number, roles: string[
   })
 }
 
+const newUserQuery = ref('')
+const searchResults = ref<any[]>([])
+const searching = ref(false)
+const addingUserId = ref<number|null>(null)
+const removingUserId = ref<number|null>(null)
+const duplicateMessage = ref<string|null>(null)
+
+async function addUserToBoard(user: any) {
+  duplicateMessage.value = null
+  if (boardUsers.value.some(u => u.id === user.id)) {
+    duplicateMessage.value = `Пользователь ${user.username} уже находится на доске`
+    return
+  }
+  addingUserId.value = user.id
+  try {
+    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/add-user/${user.id}`, {
+      method: 'PATCH',
+    })
+    await userStore.fetchUsersFromBoard(boardId.value, true)
+    searchResults.value = []
+    newUserQuery.value = ''
+  } catch (e) {
+    console.error('Failed to add user to board', e)
+  } finally {
+    addingUserId.value = null
+  }
+}
+
+async function removeUserFromBoard(user: any) {
+  removingUserId.value = user.id
+  try {
+    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/remove-user/${user.id}`, {
+      method: 'PATCH',
+    })
+    await userStore.fetchUsersFromBoard(boardId.value, true)
+  } catch (e) {
+    console.error('Failed to remove user from board', e)
+  } finally {
+    removingUserId.value = null
+  }
+}
+
+async function searchUsers() {
+  searching.value = true
+  try {
+    let url = ''
+    if (newUserQuery.value.includes('@')) {
+      url = `http://localhost:8080/api/users?email=${newUserQuery.value}&page=0&size=200`
+    } else {
+      url = `http://localhost:8080/api/users?username=${newUserQuery.value}&page=0&size=200`
+    }
+    const res = await apiFetch(url, {
+      method: 'GET',
+    })
+    const data: any = await res.json()
+    searchResults.value = data.content || []
+  } catch (e) {
+    console.error('Failed to search users', e)
+  } finally {
+    searching.value = false
+  }
+}
 
 watch(activeTab, (tab) => {
   if (tab === 'roles') {
@@ -230,48 +416,16 @@ tr {
 
 tr > td {
   background: inherit;
-}
-
-.dark tr {
-  background: #232837;
-}
+} 
 
 .dark th {
   color: #a1a1aa;
 }
 
-:deep(input), :deep(select), :deep(textarea) {
-  background: #f6f6f6;
-  color: #222;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 12px;
-  transition: background 0.2s, color 0.2s;
-}
-
-:deep(button) {
+/* :deep(button) {
   font-weight: 600;
   font-size: 1.1rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :deep(input), :deep(select), :deep(textarea) {
-    background: #232837;
-    color: #f3f3f3;
-    border: 1px solid #353945;
-  }
-
-  :deep(button) {
-    background: #2563eb;
-    color: #fff;
-    border: none;
-  }
-
-  :deep(button:hover) {
-    background: #1d4ed8;
-  }
-}
+} */
 
 .user-table-scroll {
   max-height: 400px;
@@ -292,5 +446,18 @@ tr > td {
 .user-table-scroll::-webkit-scrollbar-track {
   background: #f3f4f6;
   border-radius: 4px;
+}
+
+:deep(.dark .user-table-scroll) {
+  background: #232837;
+  scrollbar-color: #60a5fa #232837;
+}
+
+:deep(.dark .user-table-scroll::-webkit-scrollbar-track) {
+  background: #232837;
+}
+
+:deep(.dark .user-table-scroll::-webkit-scrollbar-thumb) {
+  background: #60a5fa;
 }
 </style>

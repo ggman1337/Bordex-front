@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DropdownMenu>
+    <DropdownMenu >
       <DropdownMenuTrigger as-child>
         <button class="inline-flex items-center px-2 py-1 rounded border bg-white dark:bg-dark-700 hover:bg-muted dark:hover:bg-dark-600 text-xs font-semibold shadow-sm border-gray-300 dark:border-dark-400">
           <span v-if="roles.length">{{ roles.join(', ') }}</span>
@@ -8,10 +8,10 @@
           <svg class="ml-1 w-4 h-4 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-[180px] max-h-[220px] overflow-y-auto custom-scroll">
+      <DropdownMenuContent class="min-w-[180px] max-h-[220px] overflow-y-auto custom-scroll bg-white text-black border border-gray-300 rounded shadow-md dark:bg-[#232837] dark:text-white dark:border-white">
         <div v-for="role in allRoles" :key="role">
           <label class="flex items-center gap-2 px-2 py-1 cursor-pointer">
-            <input type="checkbox" :checked="roles.includes(role)" :disabled="loading" @change="toggleRole(role)" />
+            <input type="checkbox" class="dark:bg-dark-700 dark:border-dark-600 dark:text-dark-100" :checked="roles.includes(role)" :disabled="loading" @change="toggleRole(role)" />
             <span>{{ role }}</span>
           </label>
         </div>
@@ -48,6 +48,37 @@ function toggleRole(role) {
 </script>
 
 <style scoped>
+
+:deep(.custom-scroll) {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #232837;
+}
+:deep(.custom-scroll::-webkit-scrollbar) {
+  width: 6px;
+}
+:deep(.custom-scroll::-webkit-scrollbar-thumb) {
+  background: #888;
+  border-radius: 4px;
+}
+:deep(.custom-scroll::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+label {
+  color: inherit;
+}
+input[type="checkbox"] {
+  accent-color: #2563eb;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+}
+.dark input[type="checkbox"] {
+  accent-color: #60a5fa;
+  background: #232837;
+  border: 1px solid #fff;
+}
+
 button {
   min-width: 90px;
 }
