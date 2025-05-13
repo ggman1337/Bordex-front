@@ -1,35 +1,44 @@
 <template>
-  <form class="flex flex-col gap-6 p-6 rounded-xl shadow-none bg-white dark:bg-dark-800 text-black dark:text-dark-100">
+  <form
+    class="board-settings-form flex flex-col gap-6 p-6 rounded-xl shadow-none"
+    :style="{ color: routeColor, backgroundColor: formBgColor }"
+  >
     <div class="flex gap-2 mb-6">
       <button
-          type="button"
-          class="px-4 py-2 rounded"
-          :class="activeTab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-700'"
-          @click="activeTab = 'roles'"
+        type="button"
+        class="px-4 py-2 rounded"
+        :class="activeTab === 'roles'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'"
+        @click="activeTab = 'roles'"
       >
         Пользователи и роли
       </button>
       <button
-          type="button"
-          class="px-4 py-2 rounded"
-          :class="activeTab === 'columns' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-700'"
-          @click="activeTab = 'columns'"
+        type="button"
+        class="px-4 py-2 rounded"
+        :class="activeTab === 'columns'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'"
+        @click="activeTab = 'columns'"
       >
         Колонки доски
       </button>
       <button
-          v-if="isOwner"
-          type="button"
-          class="px-4 py-2 rounded"
-          :class="activeTab === 'owner' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-dark-700'"
-          @click="activeTab = 'owner'"
+        v-if="isOwner"
+        type="button"
+        class="px-4 py-2 rounded"
+        :class="activeTab === 'owner'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200'"
+        @click="activeTab = 'owner'"
       >
         Сменить владельца/доступность
       </button>
     </div>
-    <div v-if="activeTab === 'roles'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
+    <div v-if="activeTab === 'roles'" class="mb-6 rounded-xl">
       <h2 class="text-xl font-semibold mb-2">Пользователи доски</h2>
-      <div class="user-table-scroll bg-white dark:bg-dark-800 rounded-xl">
+      <div class="user-table-scroll rounded-xl dark:bg-dark-800">
         <table class="w-full text-sm border-separate border-spacing-y-2">
           <thead>
           <tr>
@@ -66,13 +75,13 @@
           </tbody>
         </table>
       </div>
-      <div class="mt-4 flex flex-col gap-2 bg-white dark:bg-dark-800 rounded-xl">
+      <div class="mt-4 flex flex-col gap-2 rounded-xl dark:bg-dark-800">
         <h3 class="font-semibold">Добавить пользователя</h3>
         <p v-if="duplicateMessage" class="text-red-500 dark:text-red-400">{{ duplicateMessage }}</p>
         <div class="flex flex-row items-center gap-2">
-          <input v-model="newUserQuery" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
+          <input v-model="newUserQuery" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
                  maxlength="40"/>
-          <button @click.prevent="searchUsers" :disabled="searching" class="px-3 py-1 rounded border transition-colors bg-white text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
+          <button @click.prevent="searchUsers" :disabled="searching" class="px-3 py-1 rounded border transition-colors text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
             {{ searching ? 'Поиск...' : 'Поиск' }}
           </button>
         </div>
@@ -84,18 +93,18 @@
             </button>
           </div>
         </div>
-        <div v-else-if="!searching && newUserQuery" class="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
+        <div v-else-if="!searching && newUserQuery && hasSearched && !searchResults.length" class="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
           Пользователи не найдены
         </div>
       </div>
     </div>
 
     <!-- Секция управления колонками -->
-    <div v-if="activeTab === 'columns'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
+    <div v-if="activeTab === 'columns'" class="mb-6 rounded-xl dark:bg-dark-800">
       <h2 class="text-xl font-semibold mb-2">Колонки доски</h2>
       <div class="mb-2 flex flex-col gap-2">
         <div v-for="col in localColumns" :key="col.id"
-             class="flex items-center gap-2 bg-muted dark:bg-dark-700 rounded p-2">
+             class="flex items-center gap-2 rounded p-2">
           <span class="flex-1 font-semibold">{{ col.title }}</span>
           <span class="text-xs text-muted-foreground">({{ col.status }})</span>
           <button class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 rounded hover:bg-blue-200"
@@ -111,30 +120,30 @@
       </button>
     </div>
 
-    <div v-if="activeTab === 'owner'" class="mb-6 bg-white dark:bg-dark-700 rounded-xl">
+    <div v-if="activeTab === 'owner'" class="mb-6 rounded-xl">
       <h2 class="text-xl font-semibold mb-2">Сменить владельца доски</h2>
       <div class="flex-row items-center gap-2">
-        <select v-model="newOwnerId" class="mr-2 p-2 border border-gray-300 rounded bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
-          <option :value="null" disabled class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">Выберите пользователя</option>
+        <select v-model="newOwnerId" :style="{ color: routeColor, backgroundColor: formBgColor }" class="mr-2 p-2 border border-gray-300 rounded dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+          <option :value="null" disabled :style="{ color: routeColor, backgroundColor: formBgColor }" class="dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">Выберите пользователя</option>
           <option v-for="user in boardUsers.filter(u => u.id !== boardOwner?.id)" :key="user.id" :value="user.id"
-                  class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+                  :style="{ color: routeColor, backgroundColor: formBgColor }" class="dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
             {{ user.firstName }} {{ user.lastName }} ({{ user.username }})
           </option>
         </select>
         <button :disabled="!newOwnerId || transferringOwner" @click.prevent="transferOwner"
-                class="px-3 py-1 rounded border transition-colors bg-white text-green-700 border-green-600 hover:bg-green-50 dark:bg-green-800 dark:text-white dark:border-green-800 dark:hover:bg-green-700">
+                class="px-3 py-1 rounded border transition-colors text-green-700 dark:bg-green-800 dark:text-white dark:border-green-800 dark:hover:bg-green-700 hover:bg-green-50">
           {{ transferringOwner ? 'Передача...' : 'Передать' }}
         </button>
       </div>
-      <div class="mt-4 bg-white dark:bg-dark-700 rounded-xl">
+      <div class="mt-4 rounded-xl">
         <label class="block text-sm font-semibold mb-1">Доступность доски</label>
         <div class="flex-row items-center gap-2">
-          <select v-model="boardScope" class="mr-2 p-2 border border-gray-300 rounded bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
-            <option value="PRIVATE" class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">PRIVATE</option>
-            <option value="PUBLIC" class="bg-white text-black dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">PUBLIC</option>
+          <select v-model="boardScope" :style="{ color: routeColor, backgroundColor: formBgColor }" class="mr-2 p-2 border border-gray-300 rounded dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
+            <option value="PRIVATE">PRIVATE</option>
+            <option value="PUBLIC">PUBLIC</option>
           </select>
           <button :disabled="savingScope" @click.prevent="updateScope"
-                  class="px-3 py-1 rounded border transition-colors bg-white text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
+                  class="px-3 py-1 rounded border transition-colors text-blue-700 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700 hover:bg-blue-50">
             {{ savingScope ? 'Сохраняем...' : 'Сохранить' }}
           </button>
         </div>
@@ -157,7 +166,7 @@
           </div>
           <div class="mb-6 bg-white dark:bg-dark-800 rounded-xl">
             <label class="block text-sm font-semibold mb-1">Статус</label>
-            <select v-model="columnForm.status"
+            <select v-model="columnForm.status" :style="{ color: routeColor, backgroundColor: formBgColor }"
                     class="w-full p-2 border border-gray-300 rounded dark:bg-dark-600 dark:border-dark-600 dark:text-dark-100" required>
               <option v-for="s in statusList" :key="s" :value="s">{{ s }}</option>
             </select>
@@ -255,6 +264,7 @@ const localColumns = ref<BoardColumn[]>([
 const showColumnModal = ref(false)
 const editingColumn = ref<BoardColumn | null>(null)
 const columnForm = ref({title: '', status: statusList[0]})
+const hasSearched = ref(false)
 
 function openAddColumn() {
   editingColumn.value = null
@@ -358,6 +368,7 @@ async function removeUserFromBoard(user: any) {
 }
 
 async function searchUsers() {
+  hasSearched.value = true
   searching.value = true
   try {
     let url = ''
@@ -383,6 +394,20 @@ watch(activeTab, (tab) => {
 
   }
 }, {immediate: true})
+
+// динамическая настройка цветов в зависимости от темы
+const routeColor = ref<string>('')
+const formBgColor = ref<string>('')
+function updateColors() {
+  const isDark = document.documentElement.classList.contains('dark')
+  routeColor.value = isDark ? '#fff' : '#000'
+  formBgColor.value = isDark ? '#232323' : '#fff'
+}
+onMounted(() => {
+  updateColors()
+  const obs = new MutationObserver(updateColors)
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+})
 
 </script>
 
@@ -422,11 +447,6 @@ tr > td {
   color: #a1a1aa;
 }
 
-/* :deep(button) {
-  font-weight: 600;
-  font-size: 1.1rem;
-} */
-
 .user-table-scroll {
   max-height: 400px;
   overflow-y: auto;
@@ -459,5 +479,12 @@ tr > td {
 
 :deep(.dark .user-table-scroll::-webkit-scrollbar-thumb) {
   background: #60a5fa;
+}
+
+/* Force select background/text for dark theme */
+:deep(.dark .board-settings-form select),
+:deep(.dark .board-settings-form select option) {
+  background-color: #232323 !important;
+  color: #fff !important;
 }
 </style>

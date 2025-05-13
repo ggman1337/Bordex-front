@@ -19,9 +19,10 @@
         <span class="icon" v-html="icons.IconBoards" />
         Мои доски
       </DropdownMenuItem>
-      <DropdownMenuItem class="profile-menu-item">
+      <DropdownMenuItem class="profile-menu-item" @click="showSettings = true">
         <span class="icon" v-html="icons.IconSettings" />
         Настройки профиля
+        <!-- moved out to avoid dropdown auto-close -->
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="profile-menu-item" variant="destructive" @click="handleLogout">
@@ -30,6 +31,8 @@
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
+  <!-- User settings overlay outside of dropdown to prevent auto-close -->
+  <UserSettingsOverlay :open="showSettings" @update:open="showSettings = $event" />
 </template>
 
 <script setup lang="ts">
@@ -39,6 +42,8 @@ import { useUserStore } from '@/stores/userStore'
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as icons from './ProfileMenuIcons'
+import UserSettingsOverlay from '@/components/settings/UserSettingsOverlay.vue'
+import { ref } from 'vue'
 
 const router = useRouter()
 const store = useUserStore()
@@ -74,6 +79,8 @@ const initials = computed(() => {
   }
   return 'U' // placeholder если пользователь не загружен
 })
+
+const showSettings = ref(false)
 </script>
 
 <style scoped>
