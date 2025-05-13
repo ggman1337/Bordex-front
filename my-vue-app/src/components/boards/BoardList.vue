@@ -92,7 +92,6 @@ async function connectAllBoards() {
   if (userStore.id) {
     console.log('[WebSocket] Подписка на доски пользователя', userStore.id)
     boardStore.connectUserBoardRealtime(userStore.id)
-    await boardStore.fetchBoards(userStore.id)
   }
 }
 function disconnectAllBoards() {
