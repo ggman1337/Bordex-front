@@ -23,7 +23,9 @@
       <div class="register-footer text-foreground dark:text-muted-foreground"> 2025 Bordex.</div>
     </div>
     <div class="register-right bg-white dark:bg-black">
-      <div class="register-login-btn-wrap"><button class="register-login-btn border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600" @click="goToLogin">Войти</button></div>
+      <div class="register-login-btn-wrap">
+        <button class="register-login-btn border border-blue-600 bg-white text-foreground dark:text-foreground dark:bg-black dark:hover:bg-blue-600 hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition" @click="goToLogin">Войти</button>
+      </div>
       <div class="w-full flex justify-center">
         <RegistrationForm class="w-full max-w-md" />
       </div>
@@ -112,9 +114,6 @@ import RegistrationForm from '@/components/auth/RegistrationForm.vue'
   border-radius: 8px;
   box-shadow: 0 2px 8px #0001;
   transition: background 0.2s;
-}
-.register-login-btn:hover {
-  /* hover styles applied via Tailwind classes */
 }
 .register-main-text {
   flex: 1;
