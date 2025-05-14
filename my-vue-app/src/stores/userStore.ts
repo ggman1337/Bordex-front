@@ -25,6 +25,9 @@ export interface UserState {
     firstName: string
     lastName: string
     email: string
+    allowOnSiteNotifications?: boolean
+    allowTelegramNotifications?: boolean
+    allowEmailNotifications?: boolean
     users: User[]
     boardUsers: Record<number, User[]> // boardId -> users
     userBoardRoles: Record<number, BoardRole[]> // boardId -> roles текущего пользователя
@@ -43,9 +46,13 @@ export const useUserStore = defineStore('user', {
         firstName: '',
         lastName: '',
         email: '',
+        allowOnSiteNotifications: false,
+        allowTelegramNotifications: false,
+        allowEmailNotifications: false,
         users: [],
         boardUsers: {}, // boardId -> users
         userBoardRoles: {}, // boardId -> roles
+        boardRoles: {}, // boardId -> roles
         boards: [],
         userLoaded: false, // был ли загружен пользователь
         _rolesUnsubscribers: {},
@@ -158,6 +165,9 @@ export const useUserStore = defineStore('user', {
                 this.firstName = data.firstName
                 this.lastName = data.lastName
                 this.email = data.email
+                this.allowOnSiteNotifications = data.allowOnSiteNotifications
+                this.allowTelegramNotifications = data.allowTelegramNotifications
+                this.allowEmailNotifications = data.allowEmailNotifications
                 this.boards = (data.userBoardRoles || []).map((ubr: any) => ubr.board)
                 this.userLoaded = true
                 // Подключаем WebSocket после успешного получения пользователя
@@ -169,6 +179,9 @@ export const useUserStore = defineStore('user', {
                 this.firstName = ''
                 this.lastName = ''
                 this.email = ''
+                this.allowOnSiteNotifications = false
+                this.allowTelegramNotifications = false
+                this.allowEmailNotifications = false
                 this.userBoardRoles = {}
                 this.boards = []
                 this.userLoaded = true
