@@ -264,7 +264,8 @@ const statusList = Object.values(Status)
 const localColumns = ref<BoardColumn[]>([
   {id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: []},
   {id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: []},
-  {id: 3, title: 'Готово', status: Status.DONE, tasks: []},
+  {id: 3, title: 'На рассмотрении', status: Status.REVIEW, tasks: []},
+  {id: 4, title: 'Готово', status: Status.DONE, tasks: []},
 ])
 const showColumnModal = ref(false)
 const editingColumn = ref<BoardColumn | null>(null)

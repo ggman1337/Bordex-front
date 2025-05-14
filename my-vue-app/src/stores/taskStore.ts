@@ -11,7 +11,13 @@ const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 // removed statusColors – tags now use backend-provided tagColor
 
 export const useTaskStore = defineStore('task', () => {
-  const columns = ref<BoardColumn[]>([])
+  // Initialize columns with all statuses to avoid UI flicker
+  const columns = ref<BoardColumn[]>([
+    { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: [] },
+    { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: [] },
+    { id: 3, title: 'На рассмотрении', status: Status.REVIEW, tasks: [] },
+    { id: 4, title: 'Готово', status: Status.DONE, tasks: [] },
+  ])
   const userTasks = ref<BoardTask[]>([])
   const userStore = useUserStore()
 
@@ -38,9 +44,10 @@ export const useTaskStore = defineStore('task', () => {
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     const mapped: BoardTask[] = raw.map(mapTask)
     columns.value = [
-      { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: mapped.filter((t: BoardTask) => t.status === Status.NEW).sort((a, b) => a.id - b.id) },
-      { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: mapped.filter((t: BoardTask) => t.status === Status.IN_PROGRESS).sort((a, b) => a.id - b.id) },
-      { id: 3, title: 'Готово', status: Status.DONE, tasks: mapped.filter((t: BoardTask) => t.status === Status.DONE).sort((a, b) => a.id - b.id) },
+      { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: mapped.filter(t => t.status === Status.NEW).sort((a, b) => a.id - b.id) },
+      { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: mapped.filter(t => t.status === Status.IN_PROGRESS).sort((a, b) => a.id - b.id) },
+      { id: 3, title: 'На рассмотрении', status: Status.REVIEW, tasks: mapped.filter(t => t.status === Status.REVIEW).sort((a, b) => a.id - b.id) },
+      { id: 4, title: 'Готово', status: Status.DONE, tasks: mapped.filter(t => t.status === Status.DONE).sort((a, b) => a.id - b.id) },
     ]
   }
 
@@ -59,7 +66,8 @@ export const useTaskStore = defineStore('task', () => {
       let targetCol;
       if (newStatus === Status.NEW) targetCol = columns.value[0];
       else if (newStatus === Status.IN_PROGRESS) targetCol = columns.value[1];
-      else if (newStatus === Status.DONE) targetCol = columns.value[2];
+      else if (newStatus === Status.REVIEW) targetCol = columns.value[2];
+      else if (newStatus === Status.DONE) targetCol = columns.value[3];
       if (targetCol) {
         targetCol.tasks.push(movedTask);
         targetCol.tasks.sort((a, b) => a.id - b.id);

@@ -27,6 +27,7 @@
               <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
                 <option :value="Status.NEW">Нужно сделать</option>
                 <option :value="Status.IN_PROGRESS">В процессе</option>
+                <option :value="Status.REVIEW">На рассмотрении</option>
                 <option :value="Status.DONE">Готово</option>
               </select>
             </label>
