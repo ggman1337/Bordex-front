@@ -73,6 +73,7 @@
                           class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
                     <option value="NEW">Нужно сделать</option>
                     <option value="IN_PROGRESS">В процессе</option>
+                    <option value="REVIEW">На рассмотрении</option>
                     <option value="DONE">Готово</option>
                   </select>
                 </label>
@@ -183,7 +184,6 @@ onMounted(async () => {
     isUserLoading.value = false
   }
   if (userStore.id && userStore.id !== 0) {
-    await userStore.fetchUserBoardRoles(boardId.value)
     userStore.subscribeBoardRolesRealtime(boardId.value)
     loadData(boardId.value)
     await boardStore.connectUserBoardRealtime(userStore.id)
