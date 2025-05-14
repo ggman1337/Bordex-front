@@ -3,15 +3,17 @@
     <div class="flex-1">
       <div class="flex items-center justify-between mb-2">
         <div class="font-semibold text-lg" v-html="board.title || 'Без названия'"></div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button class="text-muted-foreground hover:text-foreground text-xl -mt-2"><span>...</span></button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent class="w-32">
-            <DropdownMenuItem @click="emit('updateBoard', board)">Изменить</DropdownMenuItem>
-            <DropdownMenuItem class="text-red-500" @click="openDeleteModal">Удалить</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <template v-if="isOwner">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button class="text-muted-foreground hover:text-foreground text-xl -mt-2"><span>...</span></button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-32">
+              <DropdownMenuItem @click="emit('updateBoard', board)">Изменить</DropdownMenuItem>
+              <DropdownMenuItem class="text-red-500" @click="openDeleteModal">Удалить</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </template>
       </div>
       <div class="flex items-center text-xs text-muted-foreground mb-3">
         <template v-if="showDescription && board.description">
@@ -33,7 +35,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useBoardStore } from '@/stores/boardStore'
-import { ref, onUnmounted, toRef } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+import { ref, onUnmounted, toRef, computed } from 'vue'
 import type { Board as BoardType } from '@/components/boards/types'
 import DropdownMenu from '@/components/ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -43,6 +46,8 @@ const props = defineProps<{ board: BoardType }>()
 const board = toRef(props, 'board')
 const router = useRouter()
 const boardStore = useBoardStore()
+const userStore = useUserStore()
+const isOwner = computed(() => userStore.id === board.value.owner.id)
 const showDescription = ref(false)
 let hoverTimer: number | null = null
 

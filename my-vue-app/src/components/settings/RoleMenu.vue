@@ -8,10 +8,16 @@
           <svg class="ml-1 w-4 h-4 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-[180px] max-h-[220px] overflow-y-auto custom-scroll bg-transparent text-black border border-gray-300 rounded shadow-md dark:bg-[#232837] dark:text-white dark:border-white">
+      <DropdownMenuContent class="min-w-[180px] max-h-[220px] overflow-y-auto custom-scroll bg-white text-black border border-gray-300 rounded shadow-md dark:bg-[#232837] dark:text-white dark:border-white">
         <div v-for="role in allRoles" :key="role">
           <label class="flex items-center gap-2 px-2 py-1 cursor-pointer">
-            <input type="checkbox" class="dark:bg-dark-700 dark:border-dark-600 dark:text-dark-100" :checked="roles.includes(role)" :disabled="loading" @change="toggleRole(role)" />
+            <input
+              type="checkbox"
+              class="dark:bg-dark-700 dark:border-dark-600 dark:text-dark-100"
+              :checked="roles.includes(role)"
+              :disabled="isRoleDisabled(role)"
+              @change="toggleRole(role)"
+            />
             <span>{{ role }}</span>
           </label>
         </div>
@@ -22,8 +28,11 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu'
+import { useUserStore } from '@/stores/userStore'
+import { useBoardStore } from '@/stores/boardStore'
+
 const props = defineProps({
   user: { type: Object, required: true },
   boardId: { type: [Number, String], required: true },
@@ -36,6 +45,11 @@ const emit = defineEmits(['update-roles'])
 const localRoles = ref([...props.roles])
 watch(() => props.roles, (val) => { localRoles.value = [...val] })
 
+// Access current user and board owner to enforce manager role removal rules
+const userStore = useUserStore()
+const boardStore = useBoardStore()
+const boardOwnerId = computed(() => boardStore.boardById(Number(props.boardId))?.owner.id)
+
 function toggleRole(role) {
   const idx = localRoles.value.indexOf(role)
   if (idx === -1) {
@@ -44,6 +58,21 @@ function toggleRole(role) {
     localRoles.value.splice(idx, 1)
   }
   emit('update-roles', { userId: props.user.id, roles: [...localRoles.value] })
+}
+
+// Disable toggling roles for owner row unless current user is owner
+// Only board owner can toggle MANAGER role
+function isRoleDisabled(role) {
+  if (props.loading) return true
+  // Only board owner can change roles of the owner
+  if (props.user.id === boardOwnerId.value && userStore.id !== boardOwnerId.value) {
+    return true
+  }
+  // Only board owner can toggle MANAGER role
+  if (role === 'MANAGER' && userStore.id !== boardOwnerId.value) {
+    return true
+  }
+  return false
 }
 </script>
 

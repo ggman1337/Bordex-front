@@ -50,8 +50,10 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="user in boardUsers" :key="user.id" class="bg-muted dark:bg-dark-700 rounded">
-            <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <tr :id="`user-row-${user.id}`" v-for="user in sortedUsers" :key="user.id" class="bg-muted dark:bg-dark-700 rounded">
+            <td>{{ user.firstName }} {{ user.lastName }}
+              <span v-if="boardOwner && user.id === boardOwner.id" class="ml-2 px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">Владелец</span>
+            </td>
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
             <td>
@@ -65,9 +67,11 @@
               />
             </td>
             <td>
-              <button @click.prevent="removeUserFromBoard(user)"
-                      :disabled="removingUserId === user.id"
-                      class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+              <button
+                v-if="user.id !== userStore.id && user.id !== boardOwner?.id && (isOwner || !userRoles[user.id]?.includes('MANAGER'))"
+                @click.prevent="removeUserFromBoard(user)"
+                :disabled="removingUserId === user.id"
+                class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
                 {{ removingUserId === user.id ? 'Удаление...' : 'Удалить' }}
               </button>
             </td>
@@ -88,7 +92,7 @@
         <div v-if="searchResults.length" class="mt-2 max-h-60 overflow-y-auto flex flex-col gap-2">
           <div v-for="user in searchResults" :key="user.id" class="flex items-center justify-between p-2 bg-muted dark:bg-dark-700 rounded">
             <span>{{ user.firstName }} {{ user.lastName }} ({{ user.username }} | {{ user.email }})</span>
-            <button @click.prevent="addUserToBoard(user)" :disabled="addingUserId === user.id" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+            <button v-if="canAddUser" @click.prevent="addUserToBoard(user)" :disabled="addingUserId === user.id" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
               {{ addingUserId === user.id ? 'Добавление...' : 'Добавить' }}
             </button>
           </div>
@@ -181,12 +185,13 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch, onMounted} from 'vue'
+import {computed, ref, watch, onMounted, nextTick} from 'vue'
 import {useUserStore} from '@/stores/userStore'
 import {BOARD_ROLES} from '@/constants/boardRoles'
 import RoleMenu from './RoleMenu.vue'
 import {type BoardColumn, Status} from '@/components/boards/types'
 import {apiFetch} from '@/api/apiFetch'
+import {useBoardRoles} from '@/composables/useBoardRoles.ts'
 
 const props = defineProps({boardId: {type: Number, required: true}})
 const userStore = useUserStore()
@@ -315,6 +320,12 @@ const userRoles = computed(() => {
   return map
 })
 
+const sortedUsers = computed(() => [
+  ...boardUsers.value.filter(u => (userRoles.value[u.id] || []).includes('MANAGER')),
+  ...boardUsers.value.filter(u => (userRoles.value[u.id] || []).includes('DEVELOPER') && !(userRoles.value[u.id] || []).includes('MANAGER')),
+  ...boardUsers.value.filter(u => !(userRoles.value[u.id] || []).includes('MANAGER') && !(userRoles.value[u.id] || []).includes('DEVELOPER'))
+])
+
 const loadingUserId = ref<number | null>(null)
 
 async function updateUserRoles({userId, roles}: { userId: number, roles: string[] }) {
@@ -323,6 +334,9 @@ async function updateUserRoles({userId, roles}: { userId: number, roles: string[
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({boardRoles: roles})
   })
+  // After update, scroll updated row into view
+  await nextTick()
+  document.getElementById(`user-row-${userId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 const newUserQuery = ref('')
@@ -409,6 +423,9 @@ onMounted(() => {
   obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 })
 
+const { hasRole } = useBoardRoles(boardId)
+const isManager = computed(() => hasRole('MANAGER'))
+const canAddUser = computed(() => isOwner.value || (boardScope.value === 'PUBLIC' && isManager.value))
 </script>
 
 <style scoped>

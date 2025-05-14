@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between mb-4">
         <h1 v-if="!isUserLoading" class="text-3xl font-semibold dark:text-dark-100">
           {{ boardName }}
-          <span v-if="isManager" class="text-base font-normal text-muted-foreground ml-2">({{ boardProgress }}%)</span>
+          <span v-if="isManager" class="text-base font-normal text-muted-foreground ml-2">Прогресс: {{ boardProgress }}%</span>
         </h1>
         <button v-if="isManager"
             class="flex items-center gap-2 bg-card text-card-foreground border border-border rounded px-3 py-1 shadow hover:bg-muted dark:bg-dark-700 dark:text-dark-100 dark:border-dark-300"
@@ -28,15 +28,13 @@
         />
       </div>
 
-      <teleport to="body">
-        <div v-if="isManager">
-          <div v-if="showSettingsModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-4xl relative dark:bg-[#23272f]">
-              <button class="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-foreground"
-                      @click="showSettingsModal = false">×
-              </button>
-              <BoardSettingsForm :board-id="boardId"/>
-            </div>
+      <teleport to="body" v-if="isManager && showSettingsModal">
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div class="modal-settings-container bg-white p-6 rounded-xl shadow-xl w-full max-w-4xl relative dark:bg-[#23272f]">
+            <button class="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-foreground"
+                    @click="showSettingsModal = false">×
+            </button>
+            <BoardSettingsForm :board-id="boardId"/>
           </div>
         </div>
       </teleport>
@@ -304,7 +302,11 @@ async function assignToUser(task: BoardTask, user: User) {
 }
 
 const { hasRole } = useBoardRoles(boardId)
-const isManager = computed(() => hasRole('MANAGER'))
+// Определяем владельца доски для доступа
+const boardOwnerId = computed(() => boardStore.boards.find(b => b.id === boardId.value)?.owner.id)
+const isOwner = computed(() => userStore.id === boardOwnerId.value)
+// Владельцу и менеджеру доступны настройки
+const isManager = computed(() => hasRole('MANAGER') || isOwner.value)
 
 // Load boards and tasks, and subscribe via WebSocket when boardId changes
 async function loadData(id: number) {

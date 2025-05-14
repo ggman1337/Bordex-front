@@ -6,21 +6,19 @@
         <DialogTitle>Привязка Telegram</DialogTitle>
         <DialogDescription class="sr-only">Привязка аккаунта Telegram</DialogDescription>
         <div>
-          <template v-if="loading">Загрузка...</template>
-          <template v-else>
-            <template v-if="telegramUsername">
+          <div v-if="loading">Загрузка...</div>
+          <div v-else>
+            <div v-if="telegramUsername">
               <div class="flex flex-col gap-2">
                 <p>Ваш Telegram: @{{ telegramUsername }}</p>
                 <button @click="unassignTelegram" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Отвязать Телеграмм</button>
               </div>
-            </template>
-            <template v-else-if="passcode">
-              <a :href="telegramLink" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Продолжить в телеграмм</a>
-            </template>
-            <template v-else>
-              <button @click="assignTelegram" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Привязать Телеграмм</button>
-            </template>
-          </template>
+            </div>
+            <div v-else>
+              <button v-if="!assigning" @click="assignTelegram" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Привязать Телеграмм</button>
+              <span v-else class="px-4 py-2 text-gray-500">Идёт привязка...</span>
+            </div>
+          </div>
         </div>
         <div class="mt-4 text-right">
           <button @click="close" class="px-4 py-2 bg-gray-200 dark:bg-dark-700 text-gray-800 dark:text-dark-200 rounded hover:bg-gray-300 dark:hover:bg-dark-600">Закрыть</button>
@@ -44,7 +42,7 @@ const loading = ref(false)
 const telegramUsername = ref<string | null>(null)
 const passcode = ref<string | null>(null)
 const telegramBot = 'bordex_bot'
-const telegramLink = computed(() => `https://t.me/${telegramBot}?start=assign_account_${passcode.value}`)
+const assigning = ref(false)
 
 async function close() {
   emit('update:open', false)
@@ -64,15 +62,16 @@ async function loadData() {
 }
 
 async function assignTelegram() {
-  loading.value = true
   try {
+    assigning.value = true
     const res = await apiFetch('http://localhost:8080/api/auth/telegram-assign', { method: 'POST', credentials: 'include' })
     const data = await res.json()
     passcode.value = data.telegramPasscode
+    window.open(`https://t.me/${telegramBot}?start=assign_account_${passcode.value}`, '_blank')
   } catch (e) {
     console.error('Failed to assign', e)
   } finally {
-    loading.value = false
+    assigning.value = false
   }
 }
 
@@ -93,5 +92,4 @@ watch(() => props.open, (val) => { if (val) loadData() })
 </script>
 
 <style scoped>
-/* Styles for UserSettingsOverlay if needed */
 </style>
