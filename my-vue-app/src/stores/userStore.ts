@@ -264,7 +264,7 @@ export const useUserStore = defineStore('user', {
             this._rolesUnsubscribers = {}
             // Запрос на сервер для очистки куки
             try {
-                await fetch('http://localhost:8080/api/auth/logout', {method: 'POST', credentials: 'include'})
+                await fetch(`${baseUrl}/api/auth/logout`, {method: 'POST', credentials: 'include'})
             } catch (e) {
                 // ignore error
             }
