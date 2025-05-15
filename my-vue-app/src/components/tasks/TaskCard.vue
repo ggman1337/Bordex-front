@@ -261,7 +261,7 @@ const effectiveBoardId = computed(() => {
     ? props.task.boardId
     : (isNaN(fallbackBoardId) ? 0 : fallbackBoardId)
 })
-const { roles, hasRole } = useBoardRoles(effectiveBoardId)
+const { hasRole } = useBoardRoles(effectiveBoardId)
 const canAssign = computed(() => hasRole('MANAGER'))
 const canDelete = computed(() => hasRole('MANAGER'))
 const isAssignedToMe = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
