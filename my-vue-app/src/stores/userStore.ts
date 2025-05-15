@@ -7,7 +7,7 @@ import {apiFetch} from '@/api/apiFetch'
 import {subscribeBoardRolesRealtimeRaw} from '@/composables/useBoardRolesRealtime'
 
 // derive REST base URL from WS config
-const baseUrl = urlConfig.wsUrl.replace(/\/ws$/, '')
+const baseUrl = urlConfig.restUrl
 
 // user model reflects backend fields
 export interface User {

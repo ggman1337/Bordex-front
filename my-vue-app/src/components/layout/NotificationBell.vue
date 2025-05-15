@@ -43,7 +43,7 @@ import { useUserStore } from '@/stores/userStore'
 import { apiFetch } from '@/api/apiFetch'
 import { urlConfig } from '@/config/websocket.config'
 
-const BASE_URL = urlConfig.wsUrl
+const BASE_URL = urlConfig.restUrl
 const deletingMap = ref<Record<number, boolean>>({})
 
 async function deleteNotification(id: number, idx: number) {

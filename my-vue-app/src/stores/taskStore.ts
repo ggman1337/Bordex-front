@@ -5,8 +5,9 @@ import type { Task as BoardTask, BoardColumn } from '@/components/boards/types'
 import { Status } from '@/components/boards/types'
 import { useUserStore } from '@/stores/userStore'
 import { apiFetch } from '@/api/apiFetch'
+import { urlConfig } from '@/config/websocket.config'
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const baseUrl = urlConfig.restUrl
 
 // removed statusColors – tags now use backend-provided tagColor
 

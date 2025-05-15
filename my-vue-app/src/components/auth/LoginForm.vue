@@ -76,7 +76,7 @@ const userStore = useUserStore()
 const routeColor = ref('#000')
 const routeInline = ref('none')
 let observer: MutationObserver | null = null 
-const BASE_URL = urlConfig.wsUrl
+const BASE_URL = urlConfig.restUrl
 
 function updateRouteColor() {
   routeColor.value = document.documentElement.classList.contains('dark') ? '#fff' : '#000'

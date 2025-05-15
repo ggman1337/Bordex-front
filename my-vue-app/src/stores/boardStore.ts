@@ -6,7 +6,7 @@ import type { Board } from '@/components/boards/types'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 
 // Derive REST base URL from websocket config
-const baseUrl = urlConfig.wsUrl.replace(/^https?:\/\/localhost:8080/, 'http://localhost:8080').replace(/\/ws$/, '')
+const baseUrl = urlConfig.restUrl
 
 export const useBoardStore = defineStore('board', {
   state: () => ({

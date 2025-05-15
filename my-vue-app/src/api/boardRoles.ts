@@ -2,7 +2,7 @@ import type { BoardRole } from '@/constants/boardRoles'
 import { urlConfig } from '@/config/websocket.config'
 
 
-const BASE_URL = urlConfig.wsUrl + '/api/users/boards/roles'
+const BASE_URL = urlConfig.restUrl + '/api/users/boards/roles'
 
 export async function fetchUserBoardRoles(userId: number, boardId: number): Promise<BoardRole[]> {
   const url = `${BASE_URL}?userId=${userId}&boardId=${boardId}`

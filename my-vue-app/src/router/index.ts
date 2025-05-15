@@ -7,7 +7,6 @@ import BoardSettingsPage from '@/views/BoardSettingsPage.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import RegisterPage from '@/views/RegisterPage.vue';
 import SettingsPage from '@/views/SettingsPage.vue';
-import TestWebSocket from "@/testwebsocket/TestWebSocket.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {path: '/', name: 'Home', component: MyBoardsPage},
@@ -18,8 +17,6 @@ const routes: Array<RouteRecordRaw> = [
     {path: '/login', name: 'Login', component: LoginPage},
     {path: '/register', name: 'Register', component: RegisterPage},
     {path: '/settings', name: 'Settings', component: SettingsPage},
-    {path: '/ws', name: 'WebSocket', component: TestWebSocket},
-
 ];
 
 import { useUserStore } from '@/stores/userStore'

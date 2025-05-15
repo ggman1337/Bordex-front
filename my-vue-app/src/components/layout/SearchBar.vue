@@ -45,13 +45,14 @@ import { useRoute } from 'vue-router'
 import { Search as SearchIcon, X as XIcon } from 'lucide-vue-next'
 import { apiFetch } from '@/api/apiFetch'
 import { useUserStore } from '@/stores/userStore'
+import { urlConfig } from '@/config/websocket.config'
 
 const userStore = useUserStore()
 const route = useRoute()
 const query = ref('')
 const filterBy = ref<'name'|'description'>('name')
 const items = ref<any[]>([])
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const BASE_URL = urlConfig.restUrl
 const isOpen = ref(false)
 
 async function fetchItems() {

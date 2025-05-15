@@ -105,9 +105,10 @@ import { Settings as SettingsIcon, Bell, Home, Languages } from 'lucide-vue-next
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { useUserStore } from '@/stores/userStore'
 import { apiFetch } from '@/api/apiFetch'
+import { urlConfig } from '@/config/websocket.config'
 
 const userStore = useUserStore()
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const baseUrl = urlConfig.restUrl
 
 const activeTab = ref('general')
 

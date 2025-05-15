@@ -192,8 +192,10 @@ import RoleMenu from './RoleMenu.vue'
 import {type BoardColumn, Status} from '@/components/boards/types'
 import {apiFetch} from '@/api/apiFetch'
 import {useBoardRoles} from '@/composables/useBoardRoles.ts'
+import { urlConfig } from '@/config/websocket.config'
 
 const props = defineProps({boardId: {type: Number, required: true}})
+const BASE_URL = urlConfig.restUrl
 const userStore = useUserStore()
 const boardId = computed(() => props.boardId)
 const boardUsers = computed(() => userStore.boardUsers[boardId.value] || [])
@@ -211,7 +213,7 @@ const savingScope = ref(false)
 
 async function loadBoardDetails() {
   try {
-    const res = await apiFetch(`http://localhost:8080/api/boards/${boardId.value}`)
+    const res = await apiFetch(`${BASE_URL}/api/boards/${boardId.value}`)
     const data = await res.json()
     boardOwner.value = data.owner
     boardScope.value = data.scope
@@ -224,7 +226,7 @@ async function transferOwner() {
   if (!newOwnerId.value) return
   transferringOwner.value = true
   try {
-    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/owner-transfer/${newOwnerId.value}`, {
+    await apiFetch(`${BASE_URL}/api/boards/${boardId.value}/owner-transfer/${newOwnerId.value}`, {
       method: 'PATCH'
     })
     await loadBoardDetails()
@@ -240,7 +242,7 @@ async function transferOwner() {
 async function updateScope() {
   savingScope.value = true
   try {
-    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}`, {
+    await apiFetch(`${BASE_URL}/api/boards/${boardId.value}`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({scope: boardScope.value})
@@ -330,7 +332,7 @@ const sortedUsers = computed(() => [
 const loadingUserId = ref<number | null>(null)
 
 async function updateUserRoles({userId, roles}: { userId: number, roles: string[] }) {
-  await apiFetch(`http://localhost:8080/api/users/boards/roles/${userId}/${boardId.value}`, {
+  await apiFetch(`${BASE_URL}/api/users/boards/roles/${userId}/${boardId.value}`, {
     method: 'PATCH',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({boardRoles: roles})
@@ -355,7 +357,7 @@ async function addUserToBoard(user: any) {
   }
   addingUserId.value = user.id
   try {
-    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/add-user/${user.id}`, {
+    await apiFetch(`${BASE_URL}/api/boards/${boardId.value}/add-user/${user.id}`, {
       method: 'PATCH',
     })
     await userStore.fetchUsersFromBoard(boardId.value, true)
@@ -371,7 +373,7 @@ async function addUserToBoard(user: any) {
 async function removeUserFromBoard(user: any) {
   removingUserId.value = user.id
   try {
-    await apiFetch(`http://localhost:8080/api/boards/${boardId.value}/remove-user/${user.id}`, {
+    await apiFetch(`${BASE_URL}/api/boards/${boardId.value}/remove-user/${user.id}`, {
       method: 'PATCH',
     })
     await userStore.fetchUsersFromBoard(boardId.value, true)
@@ -388,9 +390,9 @@ async function searchUsers() {
   try {
     let url = ''
     if (newUserQuery.value.includes('@')) {
-      url = `http://localhost:8080/api/users?email=${newUserQuery.value}&page=0&size=200`
+      url = `${BASE_URL}/api/users?email=${newUserQuery.value}&page=0&size=200`
     } else {
-      url = `http://localhost:8080/api/users?username=${newUserQuery.value}&page=0&size=200`
+      url = `${BASE_URL}/api/users?username=${newUserQuery.value}&page=0&size=200`
     }
     const res = await apiFetch(url, {
       method: 'GET',

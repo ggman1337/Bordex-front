@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useBoardRoles } from '@/composables/useBoardRoles'
 import { useRoute } from 'vue-router'
 import Card from '@/components/ui/card/Card.vue'

@@ -97,7 +97,7 @@ import { urlConfig } from '@/config/websocket.config'
 
 // --- Reactive Form State ---
 const router = useRouter();
-const BASE_URL = urlConfig.wsUrl
+const BASE_URL = urlConfig.restUrl
 
 const email = ref('');
 const terms = ref(false);

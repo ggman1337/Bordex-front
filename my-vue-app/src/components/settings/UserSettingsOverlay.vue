@@ -33,6 +33,9 @@ import { ref, computed, watch } from 'vue'
 import { Dialog, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { DialogPortal } from 'reka-ui'
 import { apiFetch } from '@/api/apiFetch'
+import { urlConfig } from '@/config/websocket.config'
+
+const BASE_URL = urlConfig.restUrl
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ (e: 'update:open', value: boolean): void }>()
@@ -51,7 +54,7 @@ async function close() {
 async function loadData() {
   loading.value = true
   try {
-    const res = await apiFetch('http://localhost:8080/api/auth/me', { credentials: 'include' })
+    const res = await apiFetch(`${BASE_URL}/api/auth/me`, { credentials: 'include' })
     const data = await res.json()
     telegramUsername.value = data.telegramUsername || null
   } catch (e) {
@@ -64,7 +67,7 @@ async function loadData() {
 async function assignTelegram() {
   try {
     assigning.value = true
-    const res = await apiFetch('http://localhost:8080/api/auth/telegram-assign', { method: 'POST', credentials: 'include' })
+    const res = await apiFetch(`${BASE_URL}/api/auth/telegram-assign`, { method: 'POST', credentials: 'include' })
     const data = await res.json()
     passcode.value = data.telegramPasscode
     window.open(`https://t.me/${telegramBot}?start=assign_account_${passcode.value}`, '_blank')
@@ -78,7 +81,7 @@ async function assignTelegram() {
 async function unassignTelegram() {
   loading.value = true
   try {
-    await apiFetch('http://localhost:8080/api/auth/telegram-unassign', { method: 'POST', credentials: 'include' })
+    await apiFetch(`${BASE_URL}/api/auth/telegram-unassign`, { method: 'POST', credentials: 'include' })
     telegramUsername.value = null
     passcode.value = null
   } catch (e) {
