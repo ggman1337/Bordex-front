@@ -211,10 +211,7 @@ export const useUserStore = defineStore('user', {
             }
         }
         ,
-        async fetchUsersFromBoard(boardId
-                                  :
-                                  number, force = false
-        ) {
+        async fetchUsersFromBoard(boardId: number, force = false) {
             try {
                 // Если уже есть пользователи для этой доски и не force — не делаем запрос
                 if (this.boardUsers[boardId] && this.boardUsers[boardId].length > 0 && !force) {
