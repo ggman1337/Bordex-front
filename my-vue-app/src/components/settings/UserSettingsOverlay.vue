@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Dialog, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { DialogPortal } from 'reka-ui'
 import { apiFetch } from '@/api/apiFetch'

@@ -157,15 +157,18 @@ async function submitModal() {
   }
   const deadline = modalDeadline.value ? modalDeadline.value.toString() + 'T00:00:00' : undefined
   if (isEditMode.value && props.task) {
-    await taskStore.updateTask(props.task.id, {
-      name: modalTitle.value,
-      description: modalDescription.value,
-      status: modalStatus.value,
-      priority: modalPriority.value,
-      tag: modalTag.value,
-      deadline,
-      progress: Math.max(0, Math.min(100, modalProgress.value)),
-    })
+    const payload = (isDeveloper.value && !isManager.value)
+      ? { status: modalStatus.value, progress: Math.max(0, Math.min(100, modalProgress.value)) }
+      : {
+          name: modalTitle.value,
+          description: modalDescription.value,
+          status: modalStatus.value,
+          priority: modalPriority.value,
+          tag: modalTag.value,
+          deadline,
+          progress: Math.max(0, Math.min(100, modalProgress.value)),
+        }
+    await taskStore.updateTask(props.task.id, payload)
   } else {
     if (!props.boardId) throw new Error('boardId is required for creating a task')
     await taskStore.createTask(props.boardId, {

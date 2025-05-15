@@ -1,7 +1,7 @@
 <template>
   <div>
     <transition name="task-collapse">
-      <div v-if="visible"
+      <div v-if="visible" :id="`task-${task.id}`"
         :class="[
           'bg-[var(--task)] text-[var(--task-foreground)] rounded-xl p-4 shadow flex flex-col gap-2 transition-all duration-200',
           { 'border-l-4 border-[var(--border-primary)]': isAssigned }
@@ -29,43 +29,40 @@
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-32">
               <DropdownMenuItem v-if="canEdit" @click="openEditModal">Изменить</DropdownMenuItem>
-<DropdownMenuSeparator v-if="canEdit && (canAssign || canDelete)" />
-
-<DropdownMenuSub v-if="canAssign">
-  <DropdownMenuSubTrigger>
-    Назначить
-  </DropdownMenuSubTrigger>
-  <DropdownMenuSubContent class="min-w-[160px] py-1">
-    <DropdownMenuItem
-      v-for="user in unassignedUsers"
-      :key="user.id"
-      @click="assignToUser(user)"
-      class="px-4 py-2"
-    >
-      {{ user.username }}
-    </DropdownMenuItem>
-  </DropdownMenuSubContent>
-</DropdownMenuSub>
-<DropdownMenuSeparator v-if="canAssign && canDelete" />
-
-<DropdownMenuSub v-if="canAssign">
-  <DropdownMenuSubTrigger>
-    Снять
-  </DropdownMenuSubTrigger>
-  <DropdownMenuSubContent class="min-w-[160px] py-1">
-    <DropdownMenuItem
-      v-for="user in assignedUsers"
-      :key="user.id"
-      @click="unassignUser(user)"
-      class="px-4 py-2"
-    >
-      {{ user.username }}
-    </DropdownMenuItem>
-  </DropdownMenuSubContent>
-</DropdownMenuSub>
-<DropdownMenuSeparator v-if="canDelete && (canEdit || canAssign)" />
-
-<DropdownMenuItem v-if="canDelete" variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
+              <DropdownMenuSeparator v-if="canEdit && (canAssign || canDelete)" />
+              <DropdownMenuSub v-if="canAssign">
+                <DropdownMenuSubTrigger>
+                  Назначить
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent class="min-w-[160px] py-1">
+                  <DropdownMenuItem
+                    v-for="user in unassignedUsers"
+                    :key="user.id"
+                    @click="assignToUser(user)"
+                    class="px-4 py-2"
+                  >
+                    {{ user.username }}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator v-if="canAssign && canDelete" />
+              <DropdownMenuSub v-if="canAssign">
+                <DropdownMenuSubTrigger>
+                  Снять
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent class="min-w-[160px] py-1">
+                  <DropdownMenuItem
+                    v-for="user in assignedUsers"
+                    :key="user.id"
+                    @click="unassignUser(user)"
+                    class="px-4 py-2"
+                  >
+                    {{ user.username }}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator v-if="canDelete && (canEdit || canAssign)" />
+              <DropdownMenuItem v-if="canDelete" variant="destructive" @click="openDeleteModal">Удалить</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -337,5 +334,9 @@ const emit = defineEmits(['updateTask', 'deleteTask', 'assignTask', 'assignToUse
   max-height: 0;
   margin: 0;
   padding: 0;
+}
+.highlight {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  transition: background-color 0.3s ease;
 }
 </style>
