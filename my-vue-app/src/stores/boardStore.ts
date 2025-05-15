@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { useUserStore } from './userStore'
 import { apiFetch } from '@/api/apiFetch'
-import { websocketConfig } from '@/config/websocket.config'
+import { urlConfig } from '@/config/websocket.config'
 import type { Board } from '@/components/boards/types'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 
 // Derive REST base URL from websocket config
-const baseUrl = websocketConfig.serverUrl.replace(/^https?:\/\/localhost:8080/, 'http://localhost:8080').replace(/\/ws$/, '')
+const baseUrl = urlConfig.wsUrl.replace(/^https?:\/\/localhost:8080/, 'http://localhost:8080').replace(/\/ws$/, '')
 
 export const useBoardStore = defineStore('board', {
   state: () => ({

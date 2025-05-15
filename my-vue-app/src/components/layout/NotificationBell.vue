@@ -41,14 +41,16 @@ import { Avatar } from '@/components/ui/avatar'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import { useUserStore } from '@/stores/userStore'
 import { apiFetch } from '@/api/apiFetch'
+import { urlConfig } from '@/config/websocket.config'
 
+const BASE_URL = urlConfig.wsUrl
 const deletingMap = ref<Record<number, boolean>>({})
 
 async function deleteNotification(id: number, idx: number) {
   if (!id) return
   deletingMap.value[id] = true
   try {
-    const resp = await apiFetch(`http://localhost:8080/api/notifications/${id}?userId=${userStore.id}`, { method: 'DELETE' })
+    const resp = await apiFetch(`${BASE_URL}/api/notifications/${id}?userId=${userStore.id}`, { method: 'DELETE' })
     if (!resp.ok) throw new Error('Ошибка удаления')
     notifications.value.splice(idx, 1)
   } catch (e: any) {
@@ -104,7 +106,7 @@ async function fetchNotificationsForUser() {
   loading.value = true
   error.value = ''
   try {
-    const response = await apiFetch('http://localhost:8080/api/notifications?userId=' + userStore.id + '&page=0&size=20&sort=createdAt,desc')
+    const response = await apiFetch(`${BASE_URL}/api/notifications?userId=${userStore.id}&page=0&size=20&sort=createdAt,desc`)
     if (!response.ok) throw new Error('Ошибка загрузки уведомлений')
     const data = await response.json()
     notifications.value = Array.isArray(data.content) ? data.content.map((n: any) => ({

@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import {websocketConfig} from '@/config/websocket.config'
+import {urlConfig} from '@/config/websocket.config'
 import {connectWebSocket, disconnectWebSocket} from '@/lib/websocket'
 import type {BoardRole} from '@/constants/boardRoles'
 import {fetchAllUserBoardRoles, fetchUserBoardRoles} from '@/api/boardRoles'
@@ -7,7 +7,7 @@ import {apiFetch} from '@/api/apiFetch'
 import {subscribeBoardRolesRealtimeRaw} from '@/composables/useBoardRolesRealtime'
 
 // derive REST base URL from WS config
-const baseUrl = websocketConfig.serverUrl.replace(/\/ws$/, '')
+const baseUrl = urlConfig.wsUrl.replace(/\/ws$/, '')
 
 // user model reflects backend fields
 export interface User {

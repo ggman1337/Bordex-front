@@ -1,6 +1,6 @@
 import SockJS from 'sockjs-client'
 import Stomp from 'webstomp-client'
-import { websocketConfig } from '@/config/websocket.config'
+import { urlConfig } from '@/config/websocket.config'
 
 let stompClient: any = null
 let isConnected = false
@@ -10,7 +10,7 @@ let connectPromise: Promise<void> | null = null
 export function connectWebSocket(token?: string): Promise<void> {
   if (isConnected && stompClient) return Promise.resolve()
   if (connectPromise) return connectPromise
-  let url = websocketConfig.serverUrl.replace(/\/$/, '') + '/ws'
+  let url = urlConfig.wsUrl.replace(/\/$/, '') + '/ws'
   if (token) {
     url += `?token=${token}`
   }

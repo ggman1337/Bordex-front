@@ -65,6 +65,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {useUserStore} from '@/stores/userStore'
 import { PinInput, PinInputSlot } from '@/components/ui/pin-input'
 import { toast } from 'vue-sonner'
+import { urlConfig } from '@/config/websocket.config'
 import qrDark from '@/assets/qrcode_black.png'
 import qrLight from '@/assets/qrcode_light.png'
 
@@ -74,7 +75,8 @@ const userStore = useUserStore()
 // Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
-let observer: MutationObserver | null = null  
+let observer: MutationObserver | null = null 
+const BASE_URL = urlConfig.wsUrl
 
 function updateRouteColor() {
   routeColor.value = document.documentElement.classList.contains('dark') ? '#fff' : '#000'
@@ -137,7 +139,7 @@ watch(telegramCode, async (newVal) => {
   if (code.length === 5) {
     telegramError.value = ''
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login/telegram', {
+      const response = await fetch(`${BASE_URL}/api/auth/login/telegram`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramPasscode: code }),
@@ -162,7 +164,7 @@ watch(telegramCode, async (newVal) => {
 const onSubmit = async () => {
   errors.value = {}
   try {
-    const response = await fetch('http://localhost:8080/api/auth/login', {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

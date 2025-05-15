@@ -93,9 +93,11 @@ import CardTitle from '@/components/ui/card/CardTitle.vue'
 import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import { urlConfig } from '@/config/websocket.config'
 
 // --- Reactive Form State ---
 const router = useRouter();
+const BASE_URL = urlConfig.wsUrl
 
 const email = ref('');
 const terms = ref(false);
@@ -184,7 +186,7 @@ const onFullSubmit = async () => {
     return;
   }
   try {
-    const response = await fetch('http://localhost:8080/api/auth/register', {
+    const response = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
