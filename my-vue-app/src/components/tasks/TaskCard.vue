@@ -130,7 +130,6 @@ const props = defineProps<{ task: Task }>();
 
 function formatDeadline(deadline: string | null | undefined): string {
   if (!deadline) return ''
-  // ISO or YYYY-MM-DD or date string
   const date = new Date(deadline)
   if (isNaN(date.getTime())) return deadline
   return format(date, 'dd.MM.yyyy')
@@ -152,7 +151,6 @@ function deadlineBadgeClass(deadline: string | null | undefined): string {
   }
 }
 
-// modal state
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 
@@ -161,14 +159,11 @@ const taskStore = useTaskStore()
 const route = useRoute()
 const boardId = Number(route.params.id)
 
-// Определяем контекст доски ДО использования в watch
 const isBoardView = computed(() => !isNaN(boardId))
 
-// --- Локальный список пользователей доски ---
 const boardUsersLocal = ref<User[]>([])
 
 if (!isBoardView.value) {
-  // Только для MyTasksPage: следим за task.boardId и подгружаем пользователей
   watch(
     () => props.task.boardId,
     async (id) => {
@@ -182,43 +177,30 @@ if (!isBoardView.value) {
   )
 }
 
-// Fetch board users for assignment dropdown when task changes
 watch(() => props.task.boardId, (id) => {
   userStore.fetchUsersFromBoard(id)
 }, { immediate: true })
 
-// check if current user is assigned to the task
 const isAssigned = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
 
-// Следим за изменениями boardUsers для этой задачи
-watch(
-  () => userStore.boardUsers[props.task.boardId],
-  (newVal) => {
-  },
-  { deep: true }
-)
-
-// Получение списка пользователей для назначения (рабочая логика)
-const usersForAssignment = computed<User[]>(() => {
-  if (!isBoardView.value && !isNaN(props.task.boardId)) {
-    // Только для MyTasksPage используем локальный список
-    return boardUsersLocal.value
-  } else if (isBoardView.value && !isNaN(props.task.boardId)) {
-    // Для BoardPage используем глобальный store
-    return userStore.boardUsers[props.task.boardId] || []
-  } else {
-    return userStore.users
+const userRoles = computed(() => {
+  const map: Record<number, string[]> = {}
+  const entries = userStore.boardRolesCache[props.task.boardId] || []
+  for (const entry of entries) {
+    map[entry.user.id] = [...entry.boardRoles]
   }
+  return map
 })
 
+// Список пользователей для назначения на задачу
+const usersForAssignment = computed<User[]>(() => {
+  return (userStore.boardRolesCache[props.task.boardId] || []).map(e => e.user)
+})
 
 // Список пользователей, которым задача еще не назначена
-// Получить роль пользователя на доске
+// Получить роли пользователя на доске из кэша boardRolesCache
 function getUserBoardRole(user: User) {
-  // Берём пользователя из userStore.boardUsers, чтобы всегда получать актуальные boardRoles
-  const freshUser = userStore.boardUsers[props.task.boardId]?.find(u => u.id === user.id)
-  const boardRoles = freshUser?.boardRoles?.[props.task.boardId] || []
-  return Array.isArray(boardRoles) ? boardRoles : []
+  return userRoles.value[user.id] || []
 }
 
 const unassignedUsers = computed<User[]>(() => {
@@ -239,9 +221,6 @@ const priorityLabel: Record<string, string> = {
 
 // назначить указанного пользователя к задаче и обновить список
 async function assignToUser(user: User) {
-  if (!isBoardView.value) {
-    await userStore.fetchUsers() // всегда получаем актуальный список
-  }
   await taskStore.assignUser(props.task.id, user.id)
 }
 
@@ -250,7 +229,6 @@ async function unassignUser(user: User) {
   await taskStore.unassignUser(props.task.id, user.id)
 }
 
-// edit modal handlers
 function openEditModal() {
   showEditModal.value = true
 }
@@ -262,7 +240,6 @@ function closeEditModal() {
 async function onUpdated() {
 }
 
-// delete modal handlers
 function openDeleteModal() {
   showDeleteModal.value = true
 }
@@ -277,7 +254,6 @@ async function onDeleted() {
 
 const visible = ref(true)
 
-// Проверка ролей на доске
 // Используем boardId из props.task.boardId, если нет — из маршрута
 const fallbackBoardId = Number(route.params.id)
 const effectiveBoardId = computed(() => {
@@ -291,14 +267,12 @@ const canDelete = computed(() => hasRole('MANAGER'))
 const isAssignedToMe = computed(() => assignedUsers.value.some(u => u.id === userStore.id))
 const canEdit = computed(() => hasRole('MANAGER') || (hasRole('DEVELOPER') && isAssignedToMe.value))
 
-// Загружаем роли пользователя для текущей доски, если их ещё нет
 watch(
   () => effectiveBoardId.value,
   (id: number) => {
     if (id && !userStore.userBoardRoles[id]) {
       userStore.fetchUserBoardRoles(id)
     }
-    // Диагностика: выводим boardId, роли и computed
   },
   { immediate: true }
 )

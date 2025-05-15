@@ -11,7 +11,6 @@ export async function fetchUserBoardRoles(userId: number, boardId: number): Prom
     return []
   }
   const data = await res.json()
-  // API возвращает массив объектов, ищем нужный board и возвращаем boardRoles
   const entry = Array.isArray(data.content) ? data.content.find((r: any) => r.user.id === userId && r.board.id === boardId) : null
   return entry?.boardRoles || []
 }

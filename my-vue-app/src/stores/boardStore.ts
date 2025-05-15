@@ -1,11 +1,9 @@
 import { defineStore } from 'pinia'
-import { useUserStore } from './userStore'
 import { apiFetch } from '@/api/apiFetch'
 import { urlConfig } from '@/config/websocket.config'
 import type { Board } from '@/components/boards/types'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 
-// Derive REST base URL from websocket config
 const baseUrl = urlConfig.restUrl
 
 export const useBoardStore = defineStore('board', {
@@ -13,19 +11,14 @@ export const useBoardStore = defineStore('board', {
     boards: [] as Board[],
     loading: false,
     error: null as string | null,
-    // ID последней открытой доски, загружается из localStorage
     currentBoardId: (typeof localStorage !== 'undefined' && localStorage.getItem('currentBoardId'))
       ? Number(localStorage.getItem('currentBoardId'))
       : null as number | null,
   }),
   getters: {
-    // Возвращает все доски
     allBoards: (state) => state.boards,
-    // Находит доску по ID
     boardById: (state) => (id: number) => state.boards.find(b => b.id === id),
-    // Количество досок
     boardsCount: (state) => state.boards.length,
-    // Есть ли ошибка
     hasError: (state) => !!state.error,
   },
   actions: {
@@ -151,6 +144,11 @@ export const useBoardStore = defineStore('board', {
           tasksCount: b.tasksCount ?? 0,
           progress: b.progress ?? 0,
         }))
+        // Сброс currentBoardId, если доски нет в списке
+        if (this.currentBoardId != null && !this.boards.some(b => b.id === this.currentBoardId)) {
+          this.currentBoardId = null
+          if (typeof localStorage !== 'undefined') localStorage.removeItem('currentBoardId')
+        }
       } catch (e: any) {
         this.error = e.message
       } finally {

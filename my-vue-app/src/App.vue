@@ -19,7 +19,6 @@ onBeforeUnmount(() => {
   if (userStore.id) boardStore.disconnectUserBoardRealtime(userStore.id)
 })
 
-// Apply 'dark' class on <html> based on system or saved preference
 useColorMode({ attribute: 'class' })
 </script>
 

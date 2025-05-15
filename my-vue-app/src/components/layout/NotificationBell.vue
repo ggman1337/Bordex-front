@@ -28,6 +28,8 @@
             </div>
             <div class="text-sm text-gray-700 mb-1">{{ notif.content }}</div>
             <div class="text-xs text-gray-500">{{ formatTime(notif.createdAt) }}</div>
+            <button v-if="notif.boardId" @click.stop="goToBoard(notif.boardId)"
+              class="mt-1 text-sm text-blue-600 hover:underline">Открыть доску</button>
           </li>
         </ul>
       </div>
@@ -36,7 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { Avatar } from '@/components/ui/avatar'
 import { subscribe, unsubscribe } from '@/lib/websocket'
 import { useUserStore } from '@/stores/userStore'
@@ -44,7 +47,10 @@ import { apiFetch } from '@/api/apiFetch'
 import { urlConfig } from '@/config/websocket.config'
 
 const BASE_URL = urlConfig.restUrl
+const router = useRouter()
 const deletingMap = ref<Record<number, boolean>>({})
+const userStore = useUserStore()
+const topic = ref<string | null>(null)
 
 async function deleteNotification(id: number, idx: number) {
   if (!id) return
@@ -115,7 +121,8 @@ async function fetchNotificationsForUser() {
       content: n.content || '',
       createdAt: n.createdAt || '',
       eventType: n.eventType || '',
-      isRead: n.isRead || false
+      isRead: n.isRead || false,
+      boardId: n.boardId
     })) : []
   } catch (e: any) {
     error.value = e.message || 'Ошибка'
@@ -160,43 +167,47 @@ function markAsRead(notif: any) {
   if (notif.isRead === false) notif.isRead = true
 }
 
+function goToBoard(boardId: number) {
+  showMenu.value = false
+  router.push(`/boards/${boardId}`)
+}
+
 function badgeClass(eventType: string) {
   // Для красных badge (TASK_DELETED) возвращаем класс
   if (eventType === 'TASK_DELETED') return 'red-badge'
   return ''
 }
 
-const userStore = useUserStore()
-const topic = `/topic/notification/user/${userStore.id}`
-
-console.log('[NotificationBell] userStore.id:', userStore.id)
-console.log('[NotificationBell] Подписка на топик:', topic)
-
 const hasUnread = computed(() => notifications.value.some(n => n.isRead === false))
 
-onMounted(() => {
+// Подписываемся, когда userStore.id станет доступен
+watch(() => userStore.id, (id) => {
+  if (!id) return
+  topic.value = `/topic/notification/user/${id}`
   document.addEventListener('mousedown', handleClickOutside)
-  subscribe(topic, (msg: any) => {
+  console.log('[NotificationBell] Подписка на топик:', topic.value)
+  subscribe(topic.value, (msg: any) => {
     console.log('[NotificationBell] Получено сообщение по WebSocket:', msg)
     try {
       const notif = JSON.parse(msg.body)
-      console.log('[NotificationBell] Парсинг уведомления:', notif)
       notifications.value.unshift({
         id: notif.id,
         title: notif.title || 'Уведомление',
         content: notif.content || '',
         createdAt: notif.createdAt || '',
         eventType: notif.eventType || '',
-        isRead: notif.isRead || false
+        isRead: notif.isRead || false,
+        boardId: notif.boardId
       })
     } catch (e) {
       console.error('[NotificationBell] Ошибка парсинга уведомления:', e)
     }
   })
-})
+}, { immediate: true })
+
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', handleClickOutside)
-  unsubscribe(topic)
+  if (topic.value) unsubscribe(topic.value)
 })
 </script>
 

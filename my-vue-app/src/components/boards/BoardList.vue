@@ -83,11 +83,9 @@ const props = defineProps<{ boards: BoardType[] }>()
 const boards = toRef(props, 'boards')
 const boardStore = useBoardStore()
 const userStore = useUserStore()
-// --- Вебсокет-подписка на все доски ---
 let connectedBoardIds: number[] = []
 
 async function connectAllBoards() {
-  // disconnectAllBoards()
   await userStore.fetchCurrentUser()
   if (userStore.id) {
     console.log('[WebSocket] Подписка на доски пользователя', userStore.id)
@@ -122,7 +120,6 @@ async function submitBoardModal() {
   const name = newBoardName.value.trim()
   const description = newBoardDescription.value.trim()
   if (!name) return
-  // Создать доску и сразу обновить список
   await boardStore.createBoard(name, description || undefined)
   if (userStore.id) {
     await boardStore.fetchBoards(userStore.id)

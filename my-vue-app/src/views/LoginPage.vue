@@ -59,9 +59,6 @@ function goToRegister() {
   box-shadow: 0 2px 8px #0001;
   transition: background 0.2s;
 }
-.login-register-btn:hover {
-  /* hover styles applied via Tailwind classes */
-}
 .login-main-text {
   flex: 1;
   display: flex;

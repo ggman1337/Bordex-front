@@ -19,7 +19,6 @@ import Topbar from "@/components/layout/Topbar.vue";
 <style scoped>
 main {
   min-height: 100vh;
-  /* Hide scrollbar */
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

@@ -4,6 +4,7 @@ import { subscribe, unsubscribe } from '@/lib/websocket'
  * Подписка на realtime-обновления ролей на доске.
  * Возвращает функцию для отписки.
  */
+
 export function subscribeBoardRolesRealtimeRaw(
   boardId: number,
   onUpdate: (userBoardRole: any) => void,

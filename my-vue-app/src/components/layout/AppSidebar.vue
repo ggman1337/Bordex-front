@@ -115,7 +115,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Add transition for smooth theme switching */
 .sidebar-item {
   color: rgb(55 65 81);
   transition: background-color 0.2s, color 0.2s;

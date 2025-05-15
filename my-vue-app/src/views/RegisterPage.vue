@@ -36,7 +36,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-// Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
 let observer: MutationObserver | null = null

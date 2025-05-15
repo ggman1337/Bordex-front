@@ -22,7 +22,7 @@
       <DropdownMenuItem class="profile-menu-item" @click="showSettings = true">
         <span class="icon" v-html="icons.IconSettings" />
         Настройки профиля
-        <!-- moved out to avoid dropdown auto-close -->
+        <!-- вынесено наружу, чтобы выпадающий список не закрывался автоматически -->
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="profile-menu-item" variant="destructive" @click="handleLogout">
@@ -31,7 +31,7 @@
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
-  <!-- User settings overlay outside of dropdown to prevent auto-close -->
+  <!-- Оверлей настроек пользователя вне выпадающего списка, чтобы он не закрывался автоматически -->
   <UserSettingsOverlay :open="showSettings" @update:open="showSettings = $event" />
 </template>
 
@@ -77,7 +77,7 @@ const initials = computed(() => {
     if (firstName) return firstName[0].toUpperCase()
     if (username) return username[0].toUpperCase()
   }
-  return 'U' // placeholder если пользователь не загружен
+  return 'U'
 })
 
 const showSettings = ref(false)

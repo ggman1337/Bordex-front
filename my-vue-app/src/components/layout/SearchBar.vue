@@ -114,7 +114,7 @@ function selectItem(item: any) {
   items.value = []
   timer = null
   isOpen.value = false
-  // Determine prefix based on current route: board for Boards/Home, task otherwise
+  // Определить префикс на основе текущего маршрута: board для Boards/Home, task в противном случае
   const prefix = route.name === 'Boards' || route.name === 'Home' ? 'board' : 'task'
   setTimeout(() => {
     const el = document.getElementById(`${prefix}-${item.id}`)

@@ -68,7 +68,7 @@
             </td>
             <td>
               <button
-                v-if="user.id !== userStore.id && user.id !== boardOwner?.id && (isOwner || !userRoles[user.id]?.includes('MANAGER'))"
+                v-if="user.id !== userStore.id && user.id !== boardOwner?.id && (isOwner || (boardScope === 'PUBLIC' && !userRoles[user.id]?.includes('MANAGER')))"
                 @click.prevent="removeUserFromBoard(user)"
                 :disabled="removingUserId === user.id"
                 class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
@@ -143,8 +143,8 @@
         <label class="block text-sm font-semibold mb-1">Доступность доски</label>
         <div class="flex-row items-center gap-2">
           <select v-model="boardScope" :style="{ color: routeColor, backgroundColor: formBgColor }" class="mr-2 p-2 border border-gray-300 rounded dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600">
-            <option value="PRIVATE">PRIVATE</option>
-            <option value="PUBLIC">PUBLIC</option>
+            <option value="PRIVATE">Приватная</option>
+            <option value="PUBLIC">Публичная</option>
           </select>
           <button :disabled="savingScope" @click.prevent="updateScope"
                   class="px-3 py-1 rounded border transition-colors text-blue-700 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700 hover:bg-blue-50">
@@ -185,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch, onMounted, nextTick} from 'vue'
+import {computed, ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {useUserStore} from '@/stores/userStore'
 import {BOARD_ROLES} from '@/constants/boardRoles'
 import RoleMenu from './RoleMenu.vue'
@@ -193,6 +193,7 @@ import {type BoardColumn, Status} from '@/components/boards/types'
 import {apiFetch} from '@/api/apiFetch'
 import {useBoardRoles} from '@/composables/useBoardRoles.ts'
 import { urlConfig } from '@/config/websocket.config'
+import {subscribe, unsubscribe} from '@/lib/websocket'
 
 const props = defineProps({boardId: {type: Number, required: true}})
 const BASE_URL = urlConfig.restUrl
@@ -202,7 +203,7 @@ const boardUsers = computed(() => userStore.boardUsers[boardId.value] || [])
 const allRoles = BOARD_ROLES
 const activeTab = ref<'roles' | 'columns' | 'owner'>('roles')
 
-// Owner transfer logic
+// Логика передачи владельца
 const boardOwner = ref<any>(null)
 const newOwnerId = ref<number|null>(null)
 const transferringOwner = ref(false)
@@ -257,6 +258,18 @@ async function updateScope() {
 
 onMounted(() => {
   loadBoardDetails()
+  const userTopic = `/topic/user/${userStore.id}/board`
+  subscribe(userTopic, (msg: any) => {
+    try {
+      const updated = JSON.parse(msg.body)
+      if (updated.id === boardId.value && updated.scope) {
+        boardScope.value = updated.scope
+      }
+    } catch {}
+  })
+})
+onBeforeUnmount(() => {
+  unsubscribe(`/topic/user/${userStore.id}/board`)
 })
 watch(boardId, () => {
   loadBoardDetails()
@@ -337,7 +350,7 @@ async function updateUserRoles({userId, roles}: { userId: number, roles: string[
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({boardRoles: roles})
   })
-  // After update, scroll updated row into view
+  // После обновления, прокрутить обновленную строку вверх
   await nextTick()
   document.getElementById(`user-row-${userId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
@@ -501,7 +514,6 @@ tr > td {
   background: #60a5fa;
 }
 
-/* Force select background/text for dark theme */
 :deep(.dark .board-settings-form select),
 :deep(.dark .board-settings-form select option) {
   background-color: #232323 !important;

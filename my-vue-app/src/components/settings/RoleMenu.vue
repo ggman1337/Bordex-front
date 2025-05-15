@@ -3,7 +3,7 @@
     <DropdownMenu >
       <DropdownMenuTrigger as-child>
         <button class="inline-flex items-center px-2 py-1 rounded border bg-transparent dark:bg-dark-700 hover:bg-muted dark:hover:bg-dark-600 text-xs font-semibold shadow-sm border-gray-300 dark:border-dark-400">
-          <span v-if="roles.length">{{ roles.join(', ') }}</span>
+          <span v-if="roles.length">{{ roles.map(r => roleLabels[r] || r).join(', ') }}</span>
           <span v-else class="text-muted-foreground">Нет ролей</span>
           <svg class="ml-1 w-4 h-4 opacity-60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
@@ -18,7 +18,7 @@
               :disabled="isRoleDisabled(role)"
               @change="toggleRole(role)"
             />
-            <span>{{ role }}</span>
+            <span>{{ roleLabels[role] || role }}</span>
           </label>
         </div>
         <div v-if="loading" class="px-2 py-1 text-xs text-muted-foreground">Сохраняем...</div>
@@ -45,10 +45,15 @@ const emit = defineEmits(['update-roles'])
 const localRoles = ref([...props.roles])
 watch(() => props.roles, (val) => { localRoles.value = [...val] })
 
-// Access current user and board owner to enforce manager role removal rules
 const userStore = useUserStore()
 const boardStore = useBoardStore()
 const boardOwnerId = computed(() => boardStore.boardById(Number(props.boardId))?.owner.id)
+
+const roleLabels = {
+  DEVELOPER: 'Разработчик',
+  MANAGER: 'Менеджер',
+  VIEWER: 'Наблюдатель'
+}
 
 function toggleRole(role) {
   const idx = localRoles.value.indexOf(role)
@@ -60,15 +65,11 @@ function toggleRole(role) {
   emit('update-roles', { userId: props.user.id, roles: [...localRoles.value] })
 }
 
-// Disable toggling roles for owner row unless current user is owner
-// Only board owner can toggle MANAGER role
 function isRoleDisabled(role) {
   if (props.loading) return true
-  // Only board owner can change roles of the owner
   if (props.user.id === boardOwnerId.value && userStore.id !== boardOwnerId.value) {
     return true
   }
-  // Only board owner can toggle MANAGER role
   if (role === 'MANAGER' && userStore.id !== boardOwnerId.value) {
     return true
   }

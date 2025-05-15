@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col rounded-xl p-4 min-w-[320px] max-w-[340px] w-full bg-card text-card-foreground"
+    class="flex-none flex flex-col rounded-xl p-4 min-w-[320px] max-w-[340px] bg-card text-card-foreground"
     @dragover.prevent
     @drop.prevent="onDrop($event, column.status)"
   >
@@ -20,8 +20,8 @@
       <div
         v-for="(task, idx) in column.tasks"
         :key="task.id"
-        draggable="true"
-        @dragstart="(e) => onDragStart(e, task)"
+        :draggable="canDragTask(task)"
+        @dragstart="e => canDragTask(task) && onDragStart(e, task)"
         :style="{ marginBottom: idx !== column.tasks.length - 1 ? '16px' : '0' }"
       >
         <TaskCard
@@ -46,6 +46,8 @@ import type { User } from '@/stores/userStore'
 import { ref, computed } from 'vue'
 import { Status } from '@/components/boards/types'
 import { useBoardRoles } from '@/composables/useBoardRoles'
+import { useUserStore } from '@/stores/userStore'
+import { useBoardStore } from '@/stores/boardStore'
 
 const props = defineProps<{ column: BoardColumn, boardId: number }>()
 const emit = defineEmits<{
@@ -65,9 +67,23 @@ const statusForModal = computed<Status>(() => {
   return Status.NEW;
 })
 
-// Проверка ролей: создавать задачи могут только DEVELOPER или MANAGER
 const { hasAnyRole } = useBoardRoles(props.boardId)
-const canCreateTask = computed(() => hasAnyRole('MANAGER'))
+const userStore = useUserStore()
+const boardStore = useBoardStore()
+const userId = computed(() => userStore.id)
+const boardOwnerId = computed(() => boardStore.boardById(props.boardId)?.owner.id)
+const isManager = computed(() => hasAnyRole('MANAGER'))
+const isOwner = computed(() => userId.value === boardOwnerId.value)
+const isDeveloper = computed(() => hasAnyRole('DEVELOPER'))
+const canCreateTask = computed(() => isManager.value || isOwner.value)
+
+function canDragTask(task: Task) {
+  if (isOwner.value || isManager.value) return true
+  if (isDeveloper.value) {
+    return task.assignees?.some(a => a.id === userId.value) ?? false
+  }
+  return false
+}
 
 function openCreateTaskModal() {
   showCreateModal.value = true;
@@ -79,10 +95,8 @@ function closeCreateTaskModal() {
 
 function handleTaskCreated() {
   showCreateModal.value = false
-  // Можно добавить emit('taskCreated') если нужно обновить родителя
 }
 
-// Drag-and-drop handlers
 function onDragStart(e: DragEvent, task: Task) {
   e.dataTransfer?.setData('taskId', task.id.toString());
 }

@@ -9,10 +9,7 @@ import { urlConfig } from '@/config/websocket.config'
 
 const baseUrl = urlConfig.restUrl
 
-// removed statusColors – tags now use backend-provided tagColor
-
 export const useTaskStore = defineStore('task', () => {
-  // Initialize columns with all statuses to avoid UI flicker
   const columns = ref<BoardColumn[]>([
     { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: [] },
     { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: [] },
@@ -22,11 +19,9 @@ export const useTaskStore = defineStore('task', () => {
   const userTasks = ref<BoardTask[]>([])
   const userStore = useUserStore()
 
-  // Преобразовать сырой объект задачи в формат Task для TaskCard.vue
   function mapTask(t: any): BoardTask {
     return {
       id: t.id,
-      // assign boardId from nested board object
       boardId: t.board.id,
       name: t.name,
       description: t.description ?? '',
@@ -179,7 +174,7 @@ export const useTaskStore = defineStore('task', () => {
     await apiFetch(`${baseUrl}/api/tasks/${taskId}/unassign-user/${userId}`, { method: 'PATCH' })
   }
 
-  // --- Вебсокет для MyTasksPage ---
+  // Вебсокет для MyTasksPage
   async function connectUserTasks(userId: number) {
     await subscribe(`/topic/users/${userId}/tasks`, onUserTaskUpdate)
     await subscribe(`/topic/users/${userId}/tasks/delete`, onUserTaskDelete)

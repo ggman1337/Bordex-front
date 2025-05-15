@@ -3,7 +3,7 @@
     <div class="px-6 py-2 dark:bg-dark-800 text-foreground">
       <div class="flex items-center justify-between mb-4">
         <h1 v-if="!isUserLoading" class="text-3xl font-semibold dark:text-dark-100">
-          {{ boardName }}
+          {{ boardName }} <span :class="['ml-2 px-2 py-1 text-sm font-normal border rounded', scopeClasses]">{{ scopeLabel }}</span>
           <span v-if="isManager" class="text-base font-normal text-muted-foreground ml-2">Прогресс: {{ boardProgress }}%</span>
         </h1>
         <button v-if="isManager"
@@ -15,7 +15,7 @@
         </button>
       </div>
 
-      <div class="flex gap-6 overflow-x-auto">
+      <div class="flex flex-nowrap gap-6 overflow-x-auto board-columns-wrapper">
         <BoardColumn
             v-for="col in columns"
             :key="col.id"
@@ -210,11 +210,11 @@ const modalDeadline = ref<DateValue | undefined>(undefined)
 const modalProgress = ref<number>(0)
 const df = new DateFormatter('ru-RU', {dateStyle: 'long'})
 
-// Deletion modal state and handlers
+// Состояние модального окна удаления и обработчики
 const showDeleteModal = ref(false)
 const selectedDeleteTask = ref<BoardTask | null>(null)
 
-// Settings modal state and handlers
+// Состояние модального окна настроек и обработчики
 const showSettingsModal = ref(false)
 
 // Открыть форму создания
@@ -291,24 +291,34 @@ async function onDeleted() {
   closeDeleteModal()
 }
 
-// Handle TaskModal updated event
+// Обработчик события обновления TaskModal
 async function onModalUpdated() {
   closeTaskModal()
 }
 
-// assign specified user and refresh tasks
+// Присвоить задачу пользователю и обновить задачи
 async function assignToUser(task: BoardTask, user: User) {
   await taskStore.assignUser(task.id, user.id)
 }
 
 const { hasRole } = useBoardRoles(boardId)
-// Определяем владельца доски для доступа
-const boardOwnerId = computed(() => boardStore.boards.find(b => b.id === boardId.value)?.owner.id)
-const isOwner = computed(() => userStore.id === boardOwnerId.value)
-// Владельцу и менеджеру доступны настройки
-const isManager = computed(() => hasRole('MANAGER') || isOwner.value)
+// Доступ и видимость доски
+const isManager = computed(() => {
+  const b = boardStore.boardById(boardId.value)
+  return hasRole('MANAGER') || (b?.owner.id === userStore.id)
+})
+const scopeLabel = computed(() => {
+  const s = boardStore.boardById(boardId.value)?.scope ?? 'PRIVATE'
+  return s === 'PUBLIC' ? 'Публичная' : 'Приватная'
+})
+const scopeClasses = computed(() => {
+  const s = boardStore.boardById(boardId.value)?.scope ?? 'PRIVATE'
+  return s === 'PUBLIC'
+    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-800 dark:text-green-100 dark:border-green-700'
+    : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-700'
+})
 
-// Load boards and tasks, and subscribe via WebSocket when boardId changes
+// Загрузка досок и задач, и подписка на WebSocket при изменении boardId
 async function loadData(id: number) {
   console.log("4")
   // очистить предыдущие задачи сразу при смене доски
@@ -329,7 +339,7 @@ async function loadData(id: number) {
   }
 }
 
-// Update task status
+// Обновление статуса задачи
 async function onUpdateTask({id, status}: { id: number; status: Status }) {
   // Сохраняем новый статус на сервере
   await taskStore.updateTask(id, {status})
@@ -351,7 +361,6 @@ watch(boardId, (newId, oldId) => {
 onBeforeUnmount(() => {
   if (userStore._rolesUnsubscribers[boardId.value]) userStore._rolesUnsubscribers[boardId.value]()
   taskStore.disconnect()
-  // Отписаться от обновлений доски
   boardStore.disconnectBoardRealtime(boardId.value)
 })
 
@@ -360,5 +369,19 @@ onBeforeUnmount(() => {
 <style scoped>
 .dark .modal-settings-container {
   background: #23272f !important;
+}
+.board-columns-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #888 transparent;
+}
+.board-columns-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.board-columns-wrapper::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 3px;
+}
+.board-columns-wrapper::-webkit-scrollbar-track {
+  background: transparent;
 }
 </style>

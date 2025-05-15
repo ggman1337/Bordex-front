@@ -95,7 +95,6 @@ import CardFooter from '@/components/ui/card/CardFooter.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { urlConfig } from '@/config/websocket.config'
 
-// --- Reactive Form State ---
 const router = useRouter();
 const BASE_URL = urlConfig.restUrl
 
@@ -113,8 +112,6 @@ const showFullForm = ref(false);
 function goToTelegram() {
   router.push({ name: 'Login', query: { telegram: '1' } })
 }
-
-// --- Validation Logic ---
 
 const validateInitialForm = () => {
   const errors = {
@@ -165,8 +162,6 @@ const validateFullForm = () => {
   return errors;
 };
 
-// --- Submission Handlers ---
-
 const onSubmit = () => {
   const errors = validateInitialForm();
   if (errors.email) {
@@ -213,7 +208,6 @@ const onFullSubmit = async () => {
         onClick: () => router.push('/login'),
       },
     });
-    // Можно добавить редирект или очистку формы
   } catch (error) {
     if (error instanceof Error) {
       toast('Ошибка регистрации', {
@@ -238,16 +232,14 @@ const goBack = () => {
   color: red;
   font-size: 0.875rem;
 }
-/* Add styles from your original example */
 input[type="checkbox"] {
-  /* Ensure consistent sizing and appearance */
   width: 1rem;
   height: 1rem;
-  margin-top: 0.125rem; /* Align better with label */
+  margin-top: 0.125rem;
 }
 input[type="checkbox"]:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #2997ff44; /* Use accent color for focus */
+  box-shadow: 0 0 0 2px #2997ff44;
 }
 .input-desc {
   color: #a0a0a0;
@@ -266,32 +258,27 @@ input[type="checkbox"]:focus {
   background: #23242a;
 }
 .telegram-btn {
-  /* Adjusted border for better visibility with outline variant */
   border: 1.5px solid #29b6f6;
-  /* background: #fff;  <- variant="outline" handles background */
-  color: #29b6f6; /* Make text blue */
+  color: #29b6f6;
   border-radius: 8px;
   font-weight: 500;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .telegram-btn:hover {
-  background-color: #29b6f61a; /* Lighter blue background on hover */
+  background-color: #29b6f61a;
   box-shadow: 0 2px 8px #29b6f622;
-  /* border-color: #2997ff; <- Let hover state manage this if needed */
 }
 
-/* Responsive styles */
 @media (max-width: 900px) {
   .max-w-md {
     max-width: 100vw !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    border-left: none; /* Remove side borders on mobile */
+    border-left: none;
     border-right: none;
   }
-  /* Add padding inside card content on mobile */
-  .card > :deep(div[data-radix-vue-collection-item]:first-child), /* CardHeader */
-  .card > :deep(div[data-radix-vue-collection-item]:nth-child(2)) /* CardContent */
+  .card > :deep(div[data-radix-vue-collection-item]:first-child),
+  .card > :deep(div[data-radix-vue-collection-item]:nth-child(2))
    {
      padding-left: 1rem;
      padding-right: 1rem;
@@ -300,16 +287,16 @@ input[type="checkbox"]:focus {
 }
 
 .max-w-md {
-  width: 500px;  /* Сохраняем ширину */
-  overflow-y: auto; /* Оставляем на случай переполнения */
+  width: 500px;
+  overflow-y: auto;
 }
 
 .vue-sonner-toast {
-  z-index: 9999; /* Убедитесь, что уведомления отображаются поверх других элементов */
-  background-color: rgba(0, 0, 0, 0.8); /* Сделайте фон более заметным */
-  color: white; /* Убедитесь, что текст читаем */
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
   position: fixed;
-  top: 10px; /* Измените позицию, чтобы уведомления были видны */
+  top: 10px;
   right: 10px;
 }
 </style>

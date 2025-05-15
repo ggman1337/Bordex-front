@@ -119,7 +119,7 @@ const tabs = shallowRef([
   { id: 'language', name: 'Язык', icon: Languages },
 ])
 
-// Local settings for general tab
+// Локальные настройки для вкладки "Общие"
 interface UserSettings {
   autosave: boolean
   soundEffects: boolean
@@ -131,7 +131,7 @@ const settings = ref<UserSettings>({
   fontSize: 16,
 })
 
-// Computed bindings for notification toggles
+// Вычисляемые привязки для переключателей уведомлений
 const allowOnSite = computed<boolean>({
   get: () => userStore.allowOnSiteNotifications ?? false,
   set: async (val: boolean) => {

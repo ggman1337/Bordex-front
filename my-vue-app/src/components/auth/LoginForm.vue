@@ -72,7 +72,6 @@ import qrLight from '@/assets/qrcode_light.png'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-// Цвет иконок в зависимости от темы (реактивно)
 const routeColor = ref('#000')
 const routeInline = ref('none')
 let observer: MutationObserver | null = null 
@@ -113,7 +112,6 @@ function toggleShowPassword() {
   showPassword.value = !showPassword.value
 }
 
-// Состояние и логика Telegram
 const showTelegramForm = ref(false)
 const telegramCode = ref<string[]>([])
 const telegramError = ref('')
@@ -125,7 +123,6 @@ function onContinueTelegram() {
   showTelegramForm.value = true
 }
 
-// Обработка вставки PIN-кода из буфера
 function onTelegramPaste(e: ClipboardEvent) {
   e.preventDefault()
   const pasted = e.clipboardData?.getData('text') ?? ''
@@ -179,7 +176,6 @@ const onSubmit = async () => {
       return
     }
     toast('Успешный вход', { description: 'Добро пожаловать!', duration: 2000, class: 'bg-green-600 text-white' })
-    // После логина обновляем userStore
     await userStore.fetchCurrentUser()
     router.push('/')
   } catch (error) {
