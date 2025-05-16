@@ -172,8 +172,60 @@ import RegistrationForm from '@/components/auth/RegistrationForm.vue'
   .logo-dark { display: none; }
 }
 @media (max-width: 900px) {
+
   .register-login-btn-wrap {
-    padding: 16px 16px 0 0;
+    padding: 10px 10px 0 0;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100vw;
+    z-index: 10;
+    box-shadow: 0 1px 8px #0001;
   }
+  .register-layout {
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 100vh;
+  }
+  @media (prefers-color-scheme: dark) {
+    .register-right .max-w-md,
+    .register-right .scale-75 {
+      box-shadow: 0 2px 16px 0 #0006;
+    }
+    .register-login-btn-wrap {
+      box-shadow: 0 1px 8px #0006;
+    }
+  }
+  .register-left {
+    display: none;
+  }
+  .register-right {
+    flex: none;
+    width: 100%;
+    height: auto;
+    padding: 60px 4vw 24px 4vw;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    transition: padding 0.2s;
+  
+  }
+  .register-right .max-w-md,
+  .register-right .scale-75 {
+    max-width: 390px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    transform: none !important;
+    border-radius: 12px;
+  }
+  .register-right .scale-75 {
+    margin-top: 16px !important;
+  }
+  .register-footer {
+    display: none;
+  }
+
 }
 </style>
