@@ -124,6 +124,19 @@ export const useUserStore = defineStore('user', {
             return this.userBoardRoles[boardId]?.includes(role)
         }
         ,
+        async loginViaTelegram(initData: string) {
+            try {
+                const res = await fetch(`${baseUrl}/api/auth/login/telegram-webapp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData }),
+                    credentials: 'include'
+                })
+                if (!res.ok) throw new Error('Telegram login failed')
+            } catch (e) {
+                console.error('Failed telegram login', e)
+            }
+        },
         async fetchCurrentUser() {
             try {
                 const res = await fetch(`${baseUrl}/api/auth/me`, {credentials: 'include'})

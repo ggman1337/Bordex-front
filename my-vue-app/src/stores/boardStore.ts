@@ -192,6 +192,7 @@ export const useBoardStore = defineStore('board', {
             title: updated.name,
             description: updated.description,
             scope: updated.scope,
+            progress: updated.progress,
             owner: updated.owner,
             membersCount: updated.membersCount ?? 0,
             tasksCount: updated.tasksCount ?? 0,
