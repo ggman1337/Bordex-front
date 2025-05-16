@@ -13,6 +13,7 @@
         <div>
           <div class="font-semibold text-lg leading-tight">{{ user?.firstName }} {{ user?.lastName }}</div>
           <div class="text-muted-foreground text-base -mt-1">{{ user?.email }}</div>
+          <div class="text-muted-foreground text-sm mt-1">@{{ user?.telegramUsername }}</div>
         </div>
       </div>
       <DropdownMenuItem class="profile-menu-item" @click="goToBoards">
@@ -22,7 +23,6 @@
       <DropdownMenuItem class="profile-menu-item" @click="showSettings = true">
         <span class="icon" v-html="icons.IconSettings" />
         Настройки профиля
-        <!-- вынесено наружу, чтобы выпадающий список не закрывался автоматически -->
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="profile-menu-item" variant="destructive" @click="handleLogout">
@@ -67,7 +67,8 @@ const user = computed(() => ({
   firstName: store.firstName,
   lastName: store.lastName,
   username: store.username,
-  email: store.email
+  email: store.email,
+  telegramUsername: store.telegramUsername
 }))
 
 const initials = computed(() => {

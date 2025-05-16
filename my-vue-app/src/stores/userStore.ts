@@ -32,6 +32,7 @@ export interface UserState {
     boardRoles: Record<number, any>
     boards: Array<{ id: number, name: string }>
     userLoaded: boolean
+    telegramUsername: string
 }
 
 export const useUserStore = defineStore('user', {
@@ -41,6 +42,7 @@ export const useUserStore = defineStore('user', {
     } => ({
         id: 0,
         username: '',
+        telegramUsername: '',
         firstName: '',
         lastName: '',
         email: '',
@@ -147,6 +149,7 @@ export const useUserStore = defineStore('user', {
                 this.firstName = data.firstName
                 this.lastName = data.lastName
                 this.email = data.email
+                this.telegramUsername = data.telegramUsername
                 this.allowOnSiteNotifications = data.allowOnSiteNotifications
                 this.allowTelegramNotifications = data.allowTelegramNotifications
                 this.allowEmailNotifications = data.allowEmailNotifications
@@ -159,6 +162,7 @@ export const useUserStore = defineStore('user', {
                 this.firstName = ''
                 this.lastName = ''
                 this.email = ''
+                this.telegramUsername = ''
                 this.allowOnSiteNotifications = false
                 this.allowTelegramNotifications = false
                 this.allowEmailNotifications = false
@@ -243,6 +247,13 @@ export const useUserStore = defineStore('user', {
             this.firstName = ''
             this.lastName = ''
             this.email = ''
+            this.telegramUsername = ''
+            this.allowOnSiteNotifications = false
+            this.allowTelegramNotifications = false
+            this.allowEmailNotifications = false
+            this.userBoardRoles = {}
+            this.boards = []
+            this.userLoaded = true
             disconnectWebSocket()
         }
     }
