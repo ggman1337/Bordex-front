@@ -186,6 +186,7 @@ onMounted(async () => {
   if (userStore.id && userStore.id !== 0) {
     userStore.subscribeBoardRolesRealtime(boardId.value)
     loadData(boardId.value)
+    boardStore.connectUserBoardRealtime(userStore.id)
   } else {
     return
   }
