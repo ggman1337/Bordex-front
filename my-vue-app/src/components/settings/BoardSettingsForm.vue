@@ -67,9 +67,9 @@
               />
             </td>
             <td>
-              <button
+              <button type="button"
                 v-if="user.id !== userStore.id && user.id !== boardOwner?.id && (isOwner || (boardScope === 'PUBLIC' && !userRoles[user.id]?.includes('MANAGER')))"
-                @click.prevent="removeUserFromBoard(user)"
+                @click.prevent="openRemoveUserModal(user)"
                 :disabled="removingUserId === user.id"
                 class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
                 {{ removingUserId === user.id ? 'Удаление...' : 'Удалить' }}
@@ -83,7 +83,7 @@
         <h3 class="font-semibold">Добавить пользователя</h3>
         <p v-if="duplicateMessage" class="text-red-500 dark:text-red-400">{{ duplicateMessage }}</p>
         <div class="flex flex-row items-center gap-2">
-          <input v-model="newUserQuery" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
+          <input v-model="newUserQuery" @keyup.enter.prevent="searchUsers" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
                  maxlength="40"/>
           <button @click.prevent="searchUsers" :disabled="searching" class="px-3 py-1 rounded border transition-colors text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
             {{ searching ? 'Поиск...' : 'Поиск' }}
@@ -179,6 +179,18 @@
             Сохранить
           </button>
         </form>
+      </div>
+    </div>
+    <div v-if="showRemoveUserModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div :style="{ color: routeColor, backgroundColor: formBgColor }" :class="['p-6 rounded-xl shadow-xl w-full max-w-xs']">
+        <h3 class="text-lg font-semibold mb-4">Вы действительно хотите удалить пользователя?</h3>
+        <p class="mb-4">{{ userToRemove?.firstName }} {{ userToRemove?.lastName }} ({{ userToRemove?.username }})</p>
+        <div class="flex justify-end gap-2">
+          <button type="button" @click="closeRemoveUserModal" class="px-3 py-1 border rounded">Отмена</button>
+          <button type="button" @click="confirmRemoveUser" :disabled="removingUserId === userToRemove?.id" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+            {{ removingUserId === userToRemove?.id ? 'Удаление...' : 'Удалить' }}
+          </button>
+        </div>
       </div>
     </div>
   </form>
@@ -381,6 +393,23 @@ async function addUserToBoard(user: any) {
   } finally {
     addingUserId.value = null
   }
+}
+
+const showRemoveUserModal = ref(false)
+const userToRemove = ref<any>(null)
+function openRemoveUserModal(user: any) {
+  userToRemove.value = user
+  showRemoveUserModal.value = true
+}
+function closeRemoveUserModal() {
+  showRemoveUserModal.value = false
+  userToRemove.value = null
+}
+async function confirmRemoveUser() {
+  if (userToRemove.value) {
+    await removeUserFromBoard(userToRemove.value)
+  }
+  closeRemoveUserModal()
 }
 
 async function removeUserFromBoard(user: any) {
