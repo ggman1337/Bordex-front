@@ -22,16 +22,6 @@ export const useBoardStore = defineStore('board', {
     hasError: (state) => !!state.error,
   },
   actions: {
-    // Подписка на обновление и удаление доски (глобальная, для совместимости)
-    async connectBoardRealtime(boardId: number) {
-      await subscribe(`/topic/board/${boardId}`, this.onBoardUpdate.bind(this))
-      await subscribe(`/topic/board/${boardId}/delete`, this.onBoardDelete.bind(this))
-    },
-    disconnectBoardRealtime(boardId: number) {
-      unsubscribe(`/topic/board/${boardId}`)
-      unsubscribe(`/topic/board/${boardId}/delete`)
-    },
-
     // --- Индивидуальные realtime-топики для пользователя ---
     async connectUserBoardRealtime(userId: number) {
       await subscribe(`/topic/user/${userId}/board`, this.onUserBoardUpdate.bind(this))

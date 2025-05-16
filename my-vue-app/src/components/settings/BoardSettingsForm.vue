@@ -205,7 +205,7 @@ import {type BoardColumn, Status} from '@/components/boards/types'
 import {apiFetch} from '@/api/apiFetch'
 import {useBoardRoles} from '@/composables/useBoardRoles.ts'
 import { urlConfig } from '@/config/websocket.config'
-import {subscribe, unsubscribe} from '@/lib/websocket'
+import {unsubscribe} from '@/lib/websocket'
 
 const props = defineProps({boardId: {type: Number, required: true}})
 const BASE_URL = urlConfig.restUrl
@@ -270,15 +270,7 @@ async function updateScope() {
 
 onMounted(() => {
   loadBoardDetails()
-  const userTopic = `/topic/user/${userStore.id}/board`
-  subscribe(userTopic, (msg: any) => {
-    try {
-      const updated = JSON.parse(msg.body)
-      if (updated.id === boardId.value && updated.scope) {
-        boardScope.value = updated.scope
-      }
-    } catch {}
-  })
+  // подписка на события доски теперь осуществляется в BoardPage.vue
 })
 onBeforeUnmount(() => {
   unsubscribe(`/topic/user/${userStore.id}/board`)

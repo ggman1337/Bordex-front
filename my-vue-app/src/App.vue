@@ -11,10 +11,12 @@ const userStore = useUserStore()
 
 onMounted(async () => {
   clearUnknownCookies()
-  if (window.Telegram?.WebApp?.initData) {
-    await userStore.loginViaTelegram(window.Telegram.WebApp.initData)
+  if (!userStore.userLoaded) {
+    if (window.Telegram?.WebApp?.initData) {
+      await userStore.loginViaTelegram(window.Telegram.WebApp.initData)
+    }
+    await userStore.fetchCurrentUser()
   }
-  if (!userStore.userLoaded) await userStore.fetchCurrentUser()
   if (userStore.id) await boardStore.connectUserBoardRealtime(userStore.id)
 })
 
