@@ -130,6 +130,11 @@ async function loadData() {
     firstName.value = data.firstName || ''
     lastName.value = data.lastName || ''
     email.value = data.email || ''
+    if (telegramUsername.value && !email.value) {
+      showPostRegisterForm.value = true
+    } else {
+      showPostRegisterForm.value = false
+    }
   } catch (e) {
     console.error('Failed to fetch user', e)
   } finally {

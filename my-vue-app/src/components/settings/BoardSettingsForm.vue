@@ -83,7 +83,7 @@
         <h3 class="font-semibold">Добавить пользователя</h3>
         <p v-if="duplicateMessage" class="text-red-500 dark:text-red-400">{{ duplicateMessage }}</p>
         <div class="flex flex-row items-center gap-2">
-          <input v-model="newUserQuery" @keyup.enter.prevent="searchUsers" placeholder="Username или Email" class="p-2 border border-gray-300 rounded flex-1 dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
+          <input v-model="newUserQuery" @keyup.enter.prevent="searchUsers" placeholder="Username или Email или Telegram" class="p-2 border border-gray-300 rounded flex-1 dark:bg-dark-700 dark:text-dark-100 dark:border-dark-600" required
                  maxlength="40"/>
           <button @click.prevent="searchUsers" :disabled="searching" class="px-3 py-1 rounded border transition-colors text-blue-700 border-blue-600 hover:bg-blue-50 dark:bg-blue-800 dark:text-white dark:border-blue-800 dark:hover:bg-blue-700">
             {{ searching ? 'Поиск...' : 'Поиск' }}
@@ -91,7 +91,12 @@
         </div>
         <div v-if="searchResults.length" class="mt-2 max-h-60 overflow-y-auto flex flex-col gap-2">
           <div v-for="user in searchResults" :key="user.id" class="flex items-center justify-between p-2 bg-muted dark:bg-dark-700 rounded">
-            <span>{{ user.firstName }} {{ user.lastName }} ({{ user.username }} | {{ user.email }})</span>
+            <span v-if="!user.username && !user.email && user.telegramUsername">
+              {{ user.firstName }} {{ user.lastName }} (Telegram: @{{ user.telegramUsername }})
+            </span>
+            <span v-else>
+              {{ user.firstName }} {{ user.lastName }} ({{ user.username }} | {{ user.email }})
+            </span>
             <button v-if="canAddUser" @click.prevent="addUserToBoard(user)" :disabled="addingUserId === user.id" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">
               {{ addingUserId === user.id ? 'Добавление...' : 'Добавить' }}
             </button>
@@ -112,14 +117,14 @@
           <span class="flex-1 font-semibold">{{ col.title }}</span>
           <span class="text-xs text-muted-foreground">({{ col.status }})</span>
           <button class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 rounded hover:bg-blue-200"
-                  @click="openEditColumn(col)">Редактировать
+                 >Редактировать
           </button>
           <button class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900 rounded hover:bg-red-200"
-                  @click="deleteColumn(col)" :disabled="localColumns.length <= 3">Удалить
+                   :disabled="localColumns.length <= 3">Удалить
           </button>
         </div>
       </div>
-      <button class="mt-2 px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700" @click="openAddColumn">Добавить
+      <button class="mt-2 px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700">Добавить
         колонку
       </button>
     </div>
@@ -291,17 +296,17 @@ const editingColumn = ref<BoardColumn | null>(null)
 const columnForm = ref({title: '', status: statusList[0]})
 const hasSearched = ref(false)
 
-function openAddColumn() {
-  editingColumn.value = null
-  columnForm.value = {title: '', status: statusList[0]}
-  showColumnModal.value = true
-}
+// function openAddColumn() {
+//   editingColumn.value = null
+//   columnForm.value = {title: '', status: statusList[0]}
+//   showColumnModal.value = true
+// }
 
-function openEditColumn(col: BoardColumn) {
-  editingColumn.value = col
-  columnForm.value = {title: col.title, status: col.status}
-  showColumnModal.value = true
-}
+// function openEditColumn(col: BoardColumn) {
+//   editingColumn.value = col
+//   columnForm.value = {title: col.title, status: col.status}
+//   showColumnModal.value = true
+// }
 
 function closeColumnModal() {
   showColumnModal.value = false
@@ -325,11 +330,11 @@ function saveColumn() {
   showColumnModal.value = false
 }
 
-function deleteColumn(col: BoardColumn) {
-  if (localColumns.value.length > 3) {
-    localColumns.value = localColumns.value.filter(c => c.id !== col.id)
-  }
-}
+// function deleteColumn(col: BoardColumn) {
+//   if (localColumns.value.length > 3) {
+//     localColumns.value = localColumns.value.filter(c => c.id !== col.id)
+//   }
+// }
 
 const userRoles = computed(() => {
   const map: Record<number, string[]> = {}
@@ -419,6 +424,7 @@ async function removeUserFromBoard(user: any) {
 }
 
 async function searchUsers() {
+  if (!newUserQuery.value || !newUserQuery.value.trim()) return;
   hasSearched.value = true
   searching.value = true
   try {
