@@ -422,12 +422,7 @@ async function searchUsers() {
   hasSearched.value = true
   searching.value = true
   try {
-    let url = ''
-    if (newUserQuery.value.includes('@')) {
-      url = `${BASE_URL}/api/users?email=${newUserQuery.value}&page=0&size=200`
-    } else {
-      url = `${BASE_URL}/api/users?username=${newUserQuery.value}&page=0&size=200`
-    }
+    let url = `${BASE_URL}/api/users?username=${newUserQuery.value}&email=${newUserQuery.value}&telegramUsername=${newUserQuery.value}`
     const res = await apiFetch(url, {
       method: 'GET',
     })
