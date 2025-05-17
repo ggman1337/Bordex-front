@@ -188,12 +188,11 @@ watch(() => userStore.id, (id) => {
   subscribe(topic.value, (msg: any) => {
     try {
       const notif = JSON.parse(msg.body)
-      const createdAt = new Date().toISOString();
       notifications.value.unshift({
         id: notif.id,
         title: notif.title || 'Уведомление',
         content: notif.content || '',
-        createdAt,
+        createdAt: notif.createdAt || '',
         eventType: notif.eventType || '',
         isRead: notif.isRead || false,
         boardId: notif.boardId
