@@ -188,44 +188,7 @@ watch(() => userStore.id, (id) => {
   subscribe(topic.value, (msg: any) => {
     try {
       const notif = JSON.parse(msg.body)
-      let createdAt = notif.createdAt
-      if (typeof window !== 'undefined') {
-        if (!(window as any)._serverUptimeDate) {
-          (window as any)._serverUptimeDate = null
-        }
-      }
-      let isUptime = false
-      try {
-        const date = new Date(createdAt)
-        const now = new Date()
-        const diffSec = Math.abs(now.getTime() - date.getTime()) / 1000
-        if (!createdAt || isNaN(date.getTime()) || date.getFullYear() < 2024 || (diffSec > 60 && typeof window !== 'undefined' && !(window as any)._serverUptimeDate)) {
-          if (typeof window !== 'undefined' && !(window as any)._serverUptimeDate) {
-            (window as any)._serverUptimeDate = createdAt
-          }
-          createdAt = now.toISOString()
-        } else if (
-          typeof window !== 'undefined' && (window as any)._serverUptimeDate && createdAt === (window as any)._serverUptimeDate
-        ) {
-          isUptime = true
-          createdAt = now.toISOString()
-        } else if (
-          typeof window !== 'undefined' && (window as any)._serverUptimeDate && createdAt === (window as any)._serverUptimeDate
-        ) {
-          createdAt = now.toISOString()
-        } else {
-          const diffSec = Math.abs(now.getTime() - date.getTime()) / 1000
-          if (
-            typeof window !== 'undefined' && (window as any)._serverUptimeDate &&
-            createdAt === (window as any)._serverUptimeDate &&
-            diffSec > 60
-          ) {
-            createdAt = now.toISOString()
-          }
-        }
-      } catch {
-        createdAt = new Date().toISOString()
-      }
+      const createdAt = new Date().toISOString();
       notifications.value.unshift({
         id: notif.id,
         title: notif.title || 'Уведомление',
