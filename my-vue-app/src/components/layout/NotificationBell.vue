@@ -185,9 +185,7 @@ watch(() => userStore.id, (id) => {
   if (!id) return
   topic.value = `/topic/notification/user/${id}`
   document.addEventListener('mousedown', handleClickOutside)
-  console.log('[NotificationBell] Подписка на топик:', topic.value)
   subscribe(topic.value, (msg: any) => {
-    console.log('[NotificationBell] Получено сообщение по WebSocket:', msg)
     try {
       const notif = JSON.parse(msg.body)
       notifications.value.unshift({

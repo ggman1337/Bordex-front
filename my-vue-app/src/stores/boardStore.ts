@@ -33,8 +33,6 @@ export const useBoardStore = defineStore('board', {
     },
     // Обработчик обновления доски через user topic
     onUserBoardUpdate(msg: any) {
-      console.log('[WebSocket] Получено обновление доски через user topic:', msg)
-      // Логика идентична onBoardUpdate
       const updated = JSON.parse(msg.body)
       const idx = this.boards.findIndex((b: any) => b.id === updated.id)
       if (idx !== -1) {
@@ -63,7 +61,6 @@ export const useBoardStore = defineStore('board', {
     },
     // Обработчик удаления доски через user topic
     onUserBoardDelete(msg: any) {
-      console.log('[WebSocket] Получено удаление доски через user topic:', msg)
       const deleted = JSON.parse(msg.body)
       this.boards = this.boards.filter((b: any) => b.id !== deleted.id)
       if (this.currentBoardId === deleted.id) {

@@ -20,7 +20,6 @@ export function connectWebSocket(token?: string): Promise<void> {
     stompClient.connect({ 'accept-version': '1.2' }, () => {
       isConnected = true
       connectPromise = null
-      console.log('[WebSocket] STOMP Connected')
       resolve()
     }, (err: any) => {
       isConnected = false
@@ -39,7 +38,6 @@ export function disconnectWebSocket() {
     stompClient.disconnect(() => {
       isConnected = false
       stompClient = null
-      console.log('[WebSocket] STOMP Disconnected')
     })
   }
 }

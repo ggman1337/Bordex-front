@@ -170,7 +170,6 @@ if (!isBoardView.value) {
       if (!isNaN(id)) {
         await userStore.fetchUsersFromBoard(id)
         boardUsersLocal.value = userStore.boardUsers[id] || []
-        console.log('Fetched board users for', id, boardUsersLocal.value.map(u => u.username))
       }
     },
     { immediate: true }

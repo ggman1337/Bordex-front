@@ -361,7 +361,6 @@ watch(boardId, (newId, oldId) => {
 onBeforeUnmount(() => {
   if (userStore._rolesUnsubscribers[boardId.value]) userStore._rolesUnsubscribers[boardId.value]()
   taskStore.disconnect()
-  boardStore.disconnectBoardRealtime(boardId.value)
 })
 
 </script>

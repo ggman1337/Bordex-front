@@ -88,7 +88,6 @@ let connectedBoardIds: number[] = []
 async function connectAllBoards() {
   await userStore.fetchCurrentUser()
   if (userStore.id) {
-    console.log('[WebSocket] Подписка на доски пользователя', userStore.id)
     boardStore.connectUserBoardRealtime(userStore.id)
   }
 }
