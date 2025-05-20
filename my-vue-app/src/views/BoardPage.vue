@@ -341,11 +341,14 @@ async function loadData(id: number) {
 
 // Обновление статуса задачи
 async function onUpdateTask({id, status}: { id: number; status: Status }) {
-  // Сохраняем новый статус на сервере
-  await taskStore.updateTask(id, {status})
+  // Сохраняем новый статус (и прогресс) на сервере
+  if (status === Status.DONE) {
+    await taskStore.updateTask(id, { status, progress: 100 })
+  } else {
+    await taskStore.updateTask(id, { status })
+  }
   // Оптимистично обновляем локальные колонки
   taskStore.optimisticUpdateTaskStatus(id, status)
-  // Перезагружаем задачи для текущего пользователя, чтобы синхронизироваться с сервером
 }
 
 // Перезагрузка при смене доски

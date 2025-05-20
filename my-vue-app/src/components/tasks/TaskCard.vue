@@ -93,7 +93,16 @@
           </span>
         </div>
         <div v-if="typeof task.progress === 'number'" class="w-full mt-2">
-          <Progress :model-value="task.progress" />
+          <template v-if="!isBoardView">
+            <div class="cursor-ew-resize" ref="progressContainer" @mousedown="onProgressMouseDown">
+              <Progress :model-value="progressValue" />
+            </div>
+          </template>
+          <template v-else>
+            <div>
+              <Progress :model-value="task.progress" />
+            </div>
+          </template>
         </div>
       </div>
     </transition>
@@ -127,6 +136,14 @@ import TaskDeleteModal from './TaskDeleteModal.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
 
 const props = defineProps<{ task: Task }>();
+
+const progressValue = ref<number>(props.task.progress ?? 0)
+const isDragging = ref(false)
+const progressContainer = ref<HTMLElement | null>(null)
+
+watch(() => props.task.progress, v => {
+  progressValue.value = v ?? 0
+})
 
 function formatDeadline(deadline: string | null | undefined): string {
   if (!deadline) return ''
@@ -283,7 +300,34 @@ function handleDelete() {
 
 const emit = defineEmits(['updateTask', 'deleteTask', 'assignTask', 'assignToUser'])
 
+function updateProgress(e: MouseEvent) {
+  if (!progressContainer.value) return
+  const rect = progressContainer.value.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const pct = Math.round(Math.min(Math.max(x / rect.width, 0), 1) * 100)
+  progressValue.value = pct
+}
 
+function onProgressMouseMove(e: MouseEvent) {
+  if (isDragging.value) updateProgress(e)
+}
+
+async function onProgressMouseUp(e: MouseEvent) {
+  if (isDragging.value) {
+    updateProgress(e)
+    isDragging.value = false
+    window.removeEventListener('mousemove', onProgressMouseMove)
+    window.removeEventListener('mouseup', onProgressMouseUp)
+    await taskStore.updateTask(props.task.id, { progress: progressValue.value })
+  }
+}
+
+function onProgressMouseDown(e: MouseEvent) {
+  isDragging.value = true
+  updateProgress(e)
+  window.addEventListener('mousemove', onProgressMouseMove)
+  window.addEventListener('mouseup', onProgressMouseUp)
+}
 </script>
 
 <style scoped>
