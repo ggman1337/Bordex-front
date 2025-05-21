@@ -60,12 +60,7 @@ const emit = defineEmits<{
 
 const showCreateModal = ref(false)
 
-const statusForModal = computed<Status>(() => {
-  if (props.column.title === 'В процессе') return Status.IN_PROGRESS;
-  if (props.column.title === 'На рассмотрении') return Status.REVIEW;
-  if (props.column.title === 'Готово') return Status.DONE;
-  return Status.NEW;
-})
+const statusForModal = computed<Status>(() => props.column.status)
 
 const { hasAnyRole } = useBoardRoles(props.boardId)
 const userStore = useUserStore()

@@ -164,6 +164,32 @@ export enum Status {
   OPEN = 'OPEN',
 }
 
+export const statusTitles: Record<Status, string> = {
+  [Status.NEW]: 'Нужно сделать',
+  [Status.IN_PROGRESS]: 'В процессе',
+  [Status.REVIEW]: 'Рецензирование',
+  [Status.IN_REVIEW]: 'На рассмотрении',
+  [Status.DONE]: 'Готово',
+  [Status.FAILED]: 'Неуспех',
+  [Status.CANCELLED]: 'Отменено',
+  [Status.ON_HOLD]: 'Приостановлено',
+  [Status.WAITING_FOR_INPUT]: 'Ожидание ввода',
+  [Status.SCHEDULED]: 'Запланировано',
+  [Status.APPROVED]: 'Утверждено',
+  [Status.REJECTED]: 'Отклонено',
+  [Status.DEPLOYED]: 'Развернуто',
+  [Status.TESTING]: 'Тестирование',
+  [Status.ARCHIVED]: 'Архивировано',
+  [Status.QUEUED]: 'В очереди',
+  [Status.DELAYED]: 'Задержано',
+  [Status.NEEDS_APPROVAL]: 'Требует одобрения',
+  [Status.VALIDATING]: 'Валидация',
+  [Status.IMPLEMENTING]: 'Реализация',
+  [Status.BLOCKED]: 'Заблокировано',
+  [Status.CLOSED]: 'Закрыто',
+  [Status.OPEN]: 'Открыто',
+}
+
 export interface Task {
   id: number;
   boardId: number;

@@ -10,12 +10,7 @@ import { urlConfig } from '@/config/websocket.config'
 const baseUrl = urlConfig.restUrl
 
 export const useTaskStore = defineStore('task', () => {
-  const columns = ref<BoardColumn[]>([
-    { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: [] },
-    { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: [] },
-    { id: 3, title: 'На рассмотрении', status: Status.REVIEW, tasks: [] },
-    { id: 4, title: 'Готово', status: Status.DONE, tasks: [] },
-  ])
+  const columns = ref<BoardColumn[]>([])
   const userTasks = ref<BoardTask[]>([])
   const userStore = useUserStore()
 
@@ -39,12 +34,15 @@ export const useTaskStore = defineStore('task', () => {
     const data: any = await res.json()
     const raw: any[] = Array.isArray(data) ? data : data.content || []
     const mapped: BoardTask[] = raw.map(mapTask)
-    columns.value = [
-      { id: 1, title: 'Нужно сделать', status: Status.NEW, tasks: mapped.filter(t => t.status === Status.NEW).sort((a, b) => a.id - b.id) },
-      { id: 2, title: 'В процессе', status: Status.IN_PROGRESS, tasks: mapped.filter(t => t.status === Status.IN_PROGRESS).sort((a, b) => a.id - b.id) },
-      { id: 3, title: 'На рассмотрении', status: Status.REVIEW, tasks: mapped.filter(t => t.status === Status.REVIEW).sort((a, b) => a.id - b.id) },
-      { id: 4, title: 'Готово', status: Status.DONE, tasks: mapped.filter(t => t.status === Status.DONE).sort((a, b) => a.id - b.id) },
-    ]
+    // Распределяем задачи по колонкам, если колонки заданы
+    if (columns.value.length) {
+      columns.value = columns.value.map(col => ({
+        ...col,
+        tasks: mapped
+          .filter(t => t.status === col.status)
+          .sort((a, b) => a.id - b.id),
+      }))
+    }
   }
 
   // Оптимистичное обновление статуса задачи локально
@@ -212,20 +210,34 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
+  // Allows syncing columns from backend
+  function setColumns(newCols: BoardColumn[]) {
+    const oldCols = columns.value
+    columns.value = newCols.map(col => ({
+      ...col,
+      tasks: oldCols.find(c => c.id === col.id)?.tasks || []
+    }))
+  }
+
   return {
     columns,
     userTasks,
-    optimisticUpdateTaskStatus,
+    mapTask,
     fetchTasks,
+    optimisticUpdateTaskStatus,
     fetchTasksForUser,
     connect,
     disconnect,
+    onTaskUpdate,
     createTask,
     updateTask,
     deleteTask,
     assignUser,
     unassignUser,
+    setColumns,
     connectUserTasks,
-    disconnectUserTasks
+    disconnectUserTasks,
+    onUserTaskUpdate,
+    onUserTaskDelete
   }
 })

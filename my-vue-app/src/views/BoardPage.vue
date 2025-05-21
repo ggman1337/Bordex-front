@@ -71,10 +71,7 @@
                   <span class="text-sm font-semibold dark:text-dark-200">Статус</span>
                   <select v-model="modalStatus"
                           class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
-                    <option value="NEW">Нужно сделать</option>
-                    <option value="IN_PROGRESS">В процессе</option>
-                    <option value="REVIEW">На рассмотрении</option>
-                    <option value="DONE">Готово</option>
+                    <option v-for="s in availableStatuses" :key="s" :value="s">{{ statusTitles[s] }}</option>
                   </select>
                 </label>
                 <label>
@@ -151,7 +148,7 @@ import CardContent from '@/components/ui/card/CardContent.vue'
 import CardFooter from '@/components/ui/card/CardFooter.vue'
 import CardAction from '@/components/ui/card/CardAction.vue'
 import type {TagValue, Task as BoardTask} from '@/components/boards/types.ts'
-import {tagValues} from '@/components/boards/types.ts'
+import {tagValues, statusTitles} from '@/components/boards/types.ts'
 import {useRoute} from 'vue-router'
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useBoardStore} from '@/stores/boardStore'
@@ -168,7 +165,8 @@ import TaskDeleteModal from '@/components/tasks/TaskDeleteModal.vue'
 import BoardSettingsForm from '@/components/settings/BoardSettingsForm.vue'
 import {Status} from '@/components/boards/types'
 import {useBoardRoles} from "@/composables/useBoardRoles.ts";
-
+import {apiFetch} from '@/api/apiFetch'
+import { urlConfig } from '@/config/websocket.config'
 
 const route = useRoute()
 const boardId = computed(() => Number(route.params.id))
@@ -196,6 +194,8 @@ const boardName = computed(() => boardStore.boards.find(b => b.id === boardId.va
 const boardProgress = computed(() => boardStore.boards.find(b => b.id === boardId.value)?.progress ?? 0)
 
 const columns = computed(() => taskStore.columns)
+// statuses available for new/edit task based on current columns
+const availableStatuses = computed(() => Array.from(new Set(taskStore.columns.map(c => c.status))))
 
 // Модальный режим
 const showTaskModal = ref(false)
@@ -216,6 +216,11 @@ const selectedDeleteTask = ref<BoardTask | null>(null)
 
 // Состояние модального окна настроек и обработчики
 const showSettingsModal = ref(false)
+
+// Refresh columns when settings modal closes
+watch(showSettingsModal, (isOpen, wasOpen) => {
+  if (wasOpen && !isOpen) loadData(boardId.value)
+})
 
 // Открыть форму создания
 function openNewTaskForm({columnId, status}: { columnId: number, status: Status }) {
@@ -320,9 +325,23 @@ const scopeClasses = computed(() => {
 
 // Загрузка досок и задач, и подписка на WebSocket при изменении boardId
 async function loadData(id: number) {
-  console.log("4")
-  // очистить предыдущие задачи сразу при смене доски
-  taskStore.columns = []
+  // очистить предыдущие колонки
+  taskStore.setColumns([])
+  // загрузить колонки доски с бэкенда
+  try {
+    const resCols = await apiFetch(`${urlConfig.restUrl}/api/boards/${id}`)
+    const dataCols = await resCols.json()
+    const cols = (dataCols.boardColumns || [])
+      .sort((a: any, b: any) => a.columnNumber - b.columnNumber)
+      .map((c: any) => {
+        const st = c.status as Status
+        return { id: c.id, title: statusTitles[st] ?? st, status: st, tasks: [] }
+      })
+    console.log('Loaded boardColumns from backend:', cols)
+    taskStore.setColumns(cols)
+  } catch (e) {
+    console.error('Failed to load board columns', e)
+  }
   // загрузить доски
   await boardStore.fetchBoards(userStore.id)
   // загрузить текущего пользователя и список участников доски

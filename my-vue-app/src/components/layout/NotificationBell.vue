@@ -112,7 +112,7 @@ async function fetchNotificationsForUser() {
   loading.value = true
   error.value = ''
   try {
-    const response = await apiFetch(`${BASE_URL}/api/notifications?userId=${userStore.id}&page=0&size=20&sort=createdAt,desc`)
+    const response = await apiFetch(`${BASE_URL}/api/notifications?userId=${userStore.id}&page=0&size=200&sort=createdAt,desc`)
     if (!response.ok) throw new Error('Ошибка загрузки уведомлений')
     const data = await response.json()
     notifications.value = Array.isArray(data.content) ? data.content.map((n: any) => ({

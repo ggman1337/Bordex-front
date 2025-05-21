@@ -25,10 +25,7 @@
             <label>
               <span class="text-sm font-semibold dark:text-dark-200">Статус</span>
               <select v-model="modalStatus" class="bg-card text-card-foreground w-full p-2 border rounded dark:bg-dark-600 dark:border-white dark:text-dark-100">
-                <option :value="Status.NEW">Нужно сделать</option>
-                <option :value="Status.IN_PROGRESS">В процессе</option>
-                <option :value="Status.REVIEW">На рассмотрении</option>
-                <option :value="Status.DONE">Готово</option>
+                <option v-for="s in statusList" :key="s" :value="s">{{ statusTitles[s] }}</option>
               </select>
             </label>
             <label v-if="isManager || !isEditMode">
@@ -96,6 +93,7 @@ import { cn } from '@/utils'
 import { useTaskStore } from '@/stores/taskStore'
 import type { Task as BoardTask, TagValue } from '@/components/boards/types.ts'
 import { tagValues } from '@/components/boards/types.ts'
+import { Status, statusTitles } from '@/components/boards/types'
 
 // Определяем boardId для проверки ролей
 const route = useRoute()
@@ -105,11 +103,12 @@ const isManager = computed(() => roles.value.includes('MANAGER'))
 const isDeveloper = computed(() => roles.value.includes('DEVELOPER'))
 const isEditMode = computed(() => !!props.task && !!props.task.id)
 
-import { Status } from '@/components/boards/types'
+const taskStore = useTaskStore()
+const statusList = computed(() => Array.from(new Set(taskStore.columns.map(c => c.status))))
+
 const props = defineProps<{ task?: BoardTask, boardId?: number, status?: Status }>()
 const emit = defineEmits(['close', 'updated'])
 
-const taskStore = useTaskStore()
 const modalTitle = ref(props.task?.name ?? '')
 const modalDescription = ref(props.task?.description ?? '')
 const modalStatus = ref<Status>(props.task?.status ?? props.status ?? Status.NEW)

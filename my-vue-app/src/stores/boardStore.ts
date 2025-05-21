@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 import { apiFetch } from '@/api/apiFetch'
 import { urlConfig } from '@/config/websocket.config'
 import type { Board } from '@/components/boards/types'
+import { statusTitles, Status } from '@/components/boards/types'
 import { subscribe, unsubscribe } from '@/lib/websocket'
+import { useTaskStore } from '@/stores/taskStore'
 
 const baseUrl = urlConfig.restUrl
 
@@ -58,6 +60,13 @@ export const useBoardStore = defineStore('board', {
           progress: updated.progress ?? 0,
         })
       }
+      // Обновляем колонки и задачи в taskStore
+      const taskStore = useTaskStore()
+      const cols = (updated.boardColumns || [])
+        .sort((a: any, b: any) => a.columnNumber - b.columnNumber)
+        .map((c: any) => ({ id: c.id, title: statusTitles[c.status as Status] ?? c.status, status: c.status as Status, tasks: [] }))
+      taskStore.setColumns(cols)
+      taskStore.fetchTasks(updated.id)
     },
     // Обработчик удаления доски через user topic
     onUserBoardDelete(msg: any) {
@@ -96,6 +105,13 @@ export const useBoardStore = defineStore('board', {
           progress: updated.progress ?? 0,
         })
       }
+      // Обновляем колонки и задачи на странице
+      const taskStore = useTaskStore()
+      const cols2 = (updated.boardColumns || [])
+        .sort((a: any, b: any) => a.columnNumber - b.columnNumber)
+        .map((c: any) => ({ id: c.id, title: statusTitles[c.status as Status] ?? c.status, status: c.status as Status, tasks: [] }))
+      taskStore.setColumns(cols2)
+      taskStore.fetchTasks(updated.id)
     },
     // Обработчик удаления доски
     onBoardDelete(msg: any) {
