@@ -57,11 +57,7 @@ export const useTaskStore = defineStore('task', () => {
       }
     }
     if (movedTask) {
-      let targetCol;
-      if (newStatus === Status.NEW) targetCol = columns.value[0];
-      else if (newStatus === Status.IN_PROGRESS) targetCol = columns.value[1];
-      else if (newStatus === Status.REVIEW) targetCol = columns.value[2];
-      else if (newStatus === Status.DONE) targetCol = columns.value[3];
+      const targetCol = columns.value.find(c => c.status === newStatus);
       if (targetCol) {
         targetCol.tasks.push(movedTask);
         targetCol.tasks.sort((a, b) => a.id - b.id);
